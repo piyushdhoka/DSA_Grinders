@@ -6,7 +6,7 @@ import { fetchLeetCodeStats, updateDailyStatsForUser } from '@/lib/leetcode';
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password, leetcodeUsername } = await req.json();
+        const { name, email, password, leetcodeUsername, phoneNumber } = await req.json();
 
         // Validate required fields
         if (!name || !email || !password || !leetcodeUsername) {
@@ -24,14 +24,28 @@ export async function POST(req: Request) {
             );
         }
 
-        // Verify LeetCode username exists first
-        try {
-            await fetchLeetCodeStats(leetcodeUsername);
-        } catch (error: any) {
+        // Validate phone number format if provided
+        if (phoneNumber && !/^\+?[1-9]\d{1,14}$/.test(phoneNumber.replace(/\s/g, ''))) {
             return NextResponse.json(
-                { error: `Invalid LeetCode username: ${error.message}` },
+                { error: 'Invalid phone number format. Use international format (e.g., +1234567890)' },
                 { status: 400 }
             );
+        }
+
+        // Check if this is an admin account
+        const isAdminAccount = email.toLowerCase().includes('admin') || 
+                              email.toLowerCase() === 'admin@dsagrinders.com';
+
+        // Verify LeetCode username exists (skip for admin accounts)
+        if (!isAdminAccount) {
+            try {
+                await fetchLeetCodeStats(leetcodeUsername);
+            } catch (error: any) {
+                return NextResponse.json(
+                    { error: `Invalid LeetCode username: ${error.message}` },
+                    { status: 400 }
+                );
+            }
         }
 
         await dbConnect();
@@ -50,19 +64,27 @@ export async function POST(req: Request) {
         }
 
         // Create user
-        const user = await User.create({
+        const userData: any = {
             name,
             email: email.toLowerCase(),
             password,
             leetcodeUsername,
-        });
+        };
 
-        // Fetch initial LeetCode stats
-        try {
-            await updateDailyStatsForUser(user._id, leetcodeUsername);
-        } catch (error) {
-            console.error('Failed to fetch initial stats:', error);
-            // Don't fail registration if stats fetch fails
+        if (phoneNumber) {
+            userData.phoneNumber = phoneNumber.replace(/\s/g, ''); // Remove spaces
+        }
+
+        const user = await User.create(userData);
+
+        // Fetch initial LeetCode stats (skip for admin accounts)
+        if (!isAdminAccount) {
+            try {
+                await updateDailyStatsForUser(user._id, leetcodeUsername);
+            } catch (error) {
+                console.error('Failed to fetch initial stats:', error);
+                // Don't fail registration if stats fetch fails
+            }
         }
 
         // Generate JWT token
@@ -75,6 +97,7 @@ export async function POST(req: Request) {
                 name: user.name,
                 email: user.email,
                 leetcodeUsername: user.leetcodeUsername,
+                phoneNumber: user.phoneNumber,
             },
         });
     } catch (error: any) {

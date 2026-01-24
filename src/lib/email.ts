@@ -45,7 +45,7 @@ export async function sendDSAReminder(toEmail: string, userName: string) {
   const insult = getRandomInsult();
 
   const mailOptions = {
-    from: `"DSA Grinders" <${process.env.SMTP_EMAIL}>`,
+    from: `"DSA Grinders" <admin@dsagrinders.com>`,
     to: toEmail,
     subject: 'Daily Reality Check - Time to Grind DSA',
     html: `

@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DSA Grinders
+
+A competitive learning platform for Data Structures & Algorithms (DSA) practice that integrates with LeetCode to help users track their progress, compete with friends on a leaderboard, and stay motivated through daily reminders via email and WhatsApp.
+
+## Features
+
+- 🏆 **LeetCode Integration**: Automatic sync with LeetCode profiles
+- 📊 **Leaderboard**: Compete with friends using weighted scoring (Easy=1pt, Medium=3pts, Hard=6pts)
+- 📧 **Email Reminders**: Daily motivational "roast" emails to encourage practice
+- 📱 **WhatsApp Integration**: Send daily reminders via WhatsApp using RPay Connect API
+- 🔥 **Streak Tracking**: Monitor daily coding streaks
+- 📈 **Progress Analytics**: Track improvement over time
+- 🎯 **Gamification**: Points system and rankings to stay motivated
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React 19, Tailwind CSS, Radix UI
+- **Backend**: Next.js API Routes, MongoDB (Mongoose)
+- **Authentication**: JWT tokens with bcrypt password hashing
+- **External APIs**: LeetCode GraphQL API, RPay Connect WhatsApp API
+- **Email**: Nodemailer with Gmail SMTP
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- MongoDB database
+- Gmail account for SMTP
+- RPay Connect account for WhatsApp API
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd dsa-grinders
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env.local` with your configuration:
 
-## Learn More
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/dsa-grinders
 
-To learn more about Next.js, take a look at the following resources:
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Email (Gmail SMTP)
+SMTP_EMAIL=your-email@gmail.com
+SMTP_PASSWORD=your-gmail-app-password
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# WhatsApp API (RPay Connect)
+RPAY_API_KEY=your-rpay-api-key-from-rpayconnect.com
 
-## Deploy on Vercel
+# Cron Job Security
+CRON_SECRET=your-cron-secret-for-vercel
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Setting up WhatsApp Integration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Get RPay Connect API Key**:
+   - Visit [rpayconnect.com](https://rpayconnect.com)
+   - Sign up for an account
+   - Navigate to API section and get your API key
+   - Add the API key to your `.env.local` file as `RPAY_API_KEY`
+
+2. **WhatsApp API Endpoint**:
+   - The integration uses RPay Connect's text message API
+   - Endpoint: `https://rpayconnect.com/api/send-text`
+   - Required parameters: `api_key`, `mobile`, `msg`
+
+3. **Phone Number Format**:
+   - Use international format (e.g., +1234567890)
+   - Include country code without spaces
+
+### Setting up Email Integration
+
+1. **Gmail SMTP Setup**:
+   - Enable 2-factor authentication on your Gmail account
+   - Generate an App Password: Google Account → Security → App passwords
+   - Use the app password (not your regular password) in `SMTP_PASSWORD`
+
+### Running the Application
+
+1. Start the development server:
+```bash
+npm run dev
+```
+
+2. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### API Endpoints
+
+#### Authentication
+- `POST /api/auth/register` - Register new user (with optional phone number)
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user
+
+#### Users
+- `PUT /api/users/profile` - Update user profile (including phone number)
+- `POST /api/users/refresh` - Refresh LeetCode stats
+
+#### WhatsApp
+- `POST /api/whatsapp/send` - Send WhatsApp message
+- `POST /api/whatsapp/test` - Test WhatsApp integration
+
+#### Leaderboard
+- `GET /api/leaderboard` - Get ranked leaderboard
+
+#### Cron Jobs
+- `GET /api/cron` - Daily stats update and reminder sending
+
+### Testing WhatsApp Integration
+
+You can test the WhatsApp integration using the test endpoint:
+
+```bash
+curl -X POST http://localhost:3000/api/whatsapp/test \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "type": "roast"
+  }'
+```
+
+### Deployment
+
+1. **Vercel Deployment**:
+   - Connect your GitHub repository to Vercel
+   - Add environment variables in Vercel dashboard
+   - Deploy automatically on push to main branch
+
+2. **Cron Job Setup**:
+   - Add a Vercel Cron job to trigger `/api/cron` daily
+   - Set the `CRON_SECRET` environment variable for security
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support or questions, please open an issue on GitHub.

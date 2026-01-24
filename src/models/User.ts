@@ -7,6 +7,7 @@ export interface IUser {
   email: string;
   password: string;
   leetcodeUsername: string;
+  phoneNumber?: string; // Optional phone number for WhatsApp
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -16,6 +17,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   leetcodeUsername: { type: String, required: true, unique: true },
+  phoneNumber: { type: String, required: false }, // Optional phone number for WhatsApp
   createdAt: { type: Date, default: Date.now },
 });
 

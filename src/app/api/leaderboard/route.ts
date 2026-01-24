@@ -6,7 +6,16 @@ import { DailyStat } from '@/models/DailyStat';
 export async function GET() {
   try {
     await dbConnect();
-    const users = await User.find({}).select('-password');
+    
+    // Exclude admin accounts from leaderboard
+    const adminEmails = ['admin@dsagrinders.com'];
+    const users = await User.find({
+      email: { 
+        $nin: adminEmails,
+        $not: /admin/i // Exclude any email containing 'admin'
+      }
+    }).select('-password');
+    
     const today = new Date().toISOString().split('T')[0];
 
     const leaderboard = [];

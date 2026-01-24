@@ -44,6 +44,7 @@ export async function POST(req: Request) {
                 name: user.name,
                 email: user.email,
                 leetcodeUsername: user.leetcodeUsername,
+                phoneNumber: user.phoneNumber,
             },
         });
     } catch (error: any) {

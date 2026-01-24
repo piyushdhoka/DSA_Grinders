@@ -19,6 +19,7 @@ export default function AuthPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [leetcode, setLeetcode] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,7 +30,7 @@ export default function AuthPage() {
             if (isLogin) {
                 await login(email, password);
             } else {
-                await register(name, email, password, leetcode);
+                await register(name, email, password, leetcode, phoneNumber.trim() || undefined);
             }
         } catch (err: any) {
             setError(err.message);
@@ -111,6 +112,24 @@ export default function AuthPage() {
                                     className="h-12 px-4 bg-gray-50 border-transparent hover:bg-gray-100 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all rounded-xl text-base"
                                     placeholder="leetcode_user"
                                 />
+                            </div>
+                        )}
+
+                        {!isLogin && (
+                            <div className="space-y-1.5">
+                                <Label htmlFor="phoneNumber" className="text-gray-700 font-medium text-sm ml-1">
+                                    WhatsApp Number <span className="text-gray-400 font-normal">(Optional)</span>
+                                </Label>
+                                <Input
+                                    id="phoneNumber"
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    disabled={isLoading}
+                                    className="h-12 px-4 bg-gray-50 border-transparent hover:bg-gray-100 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all rounded-xl text-base"
+                                    placeholder="+1234567890"
+                                />
+                                <p className="text-xs text-gray-500 ml-1">Include country code for WhatsApp reminders</p>
                             </div>
                         )}
 

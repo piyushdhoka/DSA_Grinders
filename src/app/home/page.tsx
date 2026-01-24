@@ -152,6 +152,14 @@ export default function HomePage() {
                             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                             Sync Stats
                         </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push('/profile')}
+                            className="text-gray-600 hover:bg-gray-50 hover:text-blue-600 font-medium rounded-full px-4"
+                        >
+                            Profile
+                        </Button>
                         <div className="h-6 w-px bg-gray-200 mx-1"></div>
                         <Button
                             variant="ghost"

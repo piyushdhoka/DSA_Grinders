@@ -8,6 +8,7 @@ interface User {
     name: string;
     email: string;
     leetcodeUsername: string;
+    phoneNumber?: string;
 }
 
 interface AuthContextType {
@@ -15,7 +16,7 @@ interface AuthContextType {
     token: string | null;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string, leetcodeUsername: string) => Promise<void>;
+    register: (name: string, email: string, password: string, leetcodeUsername: string, phoneNumber?: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -73,14 +74,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
-        router.push('/home');
+        
+        // Check if user is admin and redirect accordingly
+        const isAdmin = data.user.email.toLowerCase().includes('admin') || 
+                       data.user.email.toLowerCase() === 'admin@dsagrinders.com'
+        
+        if (isAdmin) {
+            router.push('/admin');
+        } else {
+            router.push('/home');
+        }
     };
 
-    const register = async (name: string, email: string, password: string, leetcodeUsername: string) => {
+    const register = async (name: string, email: string, password: string, leetcodeUsername: string, phoneNumber?: string) => {
+        const body: any = { name, email, password, leetcodeUsername };
+        if (phoneNumber) {
+            body.phoneNumber = phoneNumber;
+        }
+
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, leetcodeUsername }),
+            body: JSON.stringify(body),
         });
 
         const data = await res.json();
@@ -91,7 +106,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('token', data.token);
         setToken(data.token);
         setUser(data.user);
-        router.push('/home');
+        
+        // Check if user is admin and redirect accordingly
+        const isAdmin = data.user.email.toLowerCase().includes('admin') || 
+                       data.user.email.toLowerCase() === 'admin@dsagrinders.com'
+        
+        if (isAdmin) {
+            router.push('/admin');
+        } else {
+            router.push('/home');
+        }
     };
 
     const logout = () => {
