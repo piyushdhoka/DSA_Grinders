@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Save, Phone, User } from "lucide-react";
 
 export default function ProfilePage() {
-    const { user, token, isLoading: authLoading } = useAuth();
+    const { user, token, isLoading: authLoading, updateUser } = useAuth();
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -19,6 +19,8 @@ export default function ProfilePage() {
     // Form state
     const [name, setName] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [github, setGithub] = useState("");
+    const [linkedin, setLinkedin] = useState("");
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -30,6 +32,8 @@ export default function ProfilePage() {
         if (user) {
             setName(user.name || "");
             setPhoneNumber(user.phoneNumber || "");
+            setGithub(user.github || "");
+            setLinkedin(user.linkedin || "");
         }
     }, [user]);
 
@@ -48,7 +52,9 @@ export default function ProfilePage() {
                 },
                 body: JSON.stringify({
                     name: name.trim(),
-                    phoneNumber: phoneNumber.trim() || null
+                    phoneNumber: phoneNumber.trim() || null,
+                    github: github.trim(),
+                    linkedin: linkedin.trim() || null
                 }),
             });
 
@@ -178,6 +184,42 @@ export default function ProfilePage() {
                                 className="h-12 px-4 bg-gray-100 border-transparent text-gray-500 rounded-xl text-base cursor-not-allowed"
                             />
                             <p className="text-xs text-gray-400 ml-1">LeetCode username cannot be changed</p>
+                        </div>
+
+                        {/* GitHub Profile URL */}
+                        <div className="space-y-2">
+                            <Label htmlFor="github" className="text-gray-700 font-medium text-sm ml-1 flex items-center gap-2">
+                                <Github className="h-4 w-4" />
+                                GitHub Profile URL
+                            </Label>
+                            <Input
+                                id="github"
+                                type="url"
+                                value={github}
+                                onChange={(e) => setGithub(e.target.value)}
+                                required
+                                disabled={isSaving}
+                                className="h-12 px-4 bg-gray-50 border-transparent hover:bg-gray-100 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all rounded-xl text-base"
+                                placeholder="https://github.com/username"
+                            />
+                        </div>
+
+                        {/* LinkedIn Profile URL */}
+                        <div className="space-y-2">
+                            <Label htmlFor="linkedin" className="text-gray-700 font-medium text-sm ml-1 flex items-center gap-2">
+                                <Linkedin className="h-4 w-4" />
+                                LinkedIn Profile URL
+                                <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="linkedin"
+                                type="url"
+                                value={linkedin}
+                                onChange={(e) => setLinkedin(e.target.value)}
+                                disabled={isSaving}
+                                className="h-12 px-4 bg-gray-50 border-transparent hover:bg-gray-100 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all rounded-xl text-base"
+                                placeholder="https://linkedin.com/in/username"
+                            />
                         </div>
 
                         {/* Phone Number Field */}

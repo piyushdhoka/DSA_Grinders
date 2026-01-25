@@ -43,7 +43,7 @@ export function requireAuth(handler: (req: NextRequest, user: any) => Promise<Re
                 headers: { 'Content-Type': 'application/json' }
             });
         }
-        return handler(req, user);
+        return handler(req, user, context);
     };
 }
 
