@@ -2,6 +2,22 @@
 
 A competitive learning platform for Data Structures & Algorithms (DSA) practice that integrates with LeetCode to help users track their progress, compete with friends on a leaderboard, and stay motivated through daily reminders via email and WhatsApp.
 
+## 📱 Mobile App (PWA)
+
+**DSA Grinders is now a Progressive Web App!** Install it on your phone for a native app experience:
+
+- ✅ **Installable** - Add to home screen on iOS/Android
+- ✅ **Offline Support** - Works without internet connection
+- ✅ **Native Feel** - Smooth animations, gestures, and transitions
+- ✅ **Fast Loading** - Service worker caching
+- ✅ **No App Store** - Install directly from the web
+
+**How to Install:**
+- **Android:** Visit the site in Chrome → Menu → "Install app"
+- **iOS:** Visit in Safari → Share (⬆️) → "Add to Home Screen"
+
+[See detailed PWA documentation](./PWA_SETUP.md)
+
 ## Features
 
 - 🏆 **LeetCode Integration**: Automatic sync with LeetCode profiles

@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; // Assuming it exists, if not I'll use Input or standard textarea
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 interface LeaderboardEntry {
     id: string;
@@ -835,6 +836,9 @@ export default function HomePage() {
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            {/* PWA Install Prompt */}
+            <PWAInstallPrompt />
         </div>
     );
 }
