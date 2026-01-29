@@ -40,7 +40,7 @@ export default function Home() {
           <span className="text-lg font-medium text-gray-900">DSA Grinders</span>
         </div>
         <button
-          onClick={() => signInWithGoogle()}
+          onClick={() => router.push('/login')}
           className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-full transition-colors disabled:opacity-50"
           disabled={isLoading}
         >
@@ -83,7 +83,7 @@ export default function Home() {
           {/* CTA - EMPHASIS with Google Blue */}
           <div className="flex items-center justify-center gap-4">
             <button
-              onClick={() => signInWithGoogle()}
+              onClick={() => router.push('/login')}
               className="px-8 py-3.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-base font-medium rounded-full transition-colors disabled:opacity-50"
               disabled={isLoading}
             >

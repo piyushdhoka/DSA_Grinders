@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (!existingUser) {
-      
+
             try {
                 const [newUser] = await db.insert(users).values({
                     name: user.user_metadata?.full_name || user.user_metadata?.name || 'New User',
