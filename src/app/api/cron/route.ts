@@ -53,7 +53,6 @@ async function resetDailyCountersIfNeeded(s: any): Promise<any> {
       })
       .where(eq(settings.id, s.id))
       .returning();
-    console.log('Daily counters reset for new day');
     return updated;
   }
 
@@ -64,13 +63,11 @@ async function resetDailyCountersIfNeeded(s: any): Promise<any> {
 function isTimeToSend(scheduledTimes: string[] | undefined, timezone: string = 'Asia/Kolkata', devMode: boolean = false): boolean {
   // In development mode, always return true for testing
   if (devMode) {
-    console.log('🧪 Development mode: Skipping time check');
     return true;
   }
 
   // Handle undefined or empty schedules
   if (!scheduledTimes || scheduledTimes.length === 0) {
-    console.log('⚠️ No scheduled times found');
     return false;
   }
 
@@ -86,18 +83,13 @@ function isTimeToSend(scheduledTimes: string[] | undefined, timezone: string = '
   const currentMinutes = currentHour * 60 + currentMinute;
 
   // Check if current time is within 15 minutes of any scheduled time
-  const isTime = scheduledTimes.some(scheduledTime => {
+  return scheduledTimes.some(scheduledTime => {
     const [scheduledHour, scheduledMinute] = scheduledTime.split(':').map(Number);
     const scheduledMinutes = scheduledHour * 60 + scheduledMinute;
 
     const timeDiff = Math.abs(currentMinutes - scheduledMinutes);
-    console.log(`⏰ Checking ${scheduledTime}: current=${currentTime}, diff=${timeDiff}min`);
-
     return timeDiff <= 15;
   });
-
-  console.log(`🕐 Time check result: ${isTime} (current: ${currentTime})`);
-  return isTime;
 }
 
 // Replace template variables with actual values
@@ -147,22 +139,14 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization');
 
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.log('Unauthorized cron access attempt');
     return new Response('Unauthorized - Include Authorization: Bearer <CRON_SECRET> header', { status: 401 });
   }
-
-  console.log('Cron job triggered:', {
-    hasAuth: !!authHeader,
-    timestamp: new Date().toISOString(),
-    source: 'External cron service'
-  });
 
   try {
     // Get automation settings
     let [s] = await db.select().from(settings).limit(1);
     if (!s) {
       [s] = await db.insert(settings).values({}).returning();
-      console.log('Created default automation settings');
     }
 
     // Handle migration from old format to new format
@@ -172,12 +156,10 @@ export async function GET(req: Request) {
     if (!s.emailSchedule || (s.emailSchedule as string[]).length === 0) {
       updatePayload.emailSchedule = ["09:00"];
       needsUpdate = true;
-      console.log('🔄 Migrated emailSchedule to new format');
     }
     if (!s.whatsappSchedule || (s.whatsappSchedule as string[]).length === 0) {
       updatePayload.whatsappSchedule = ["09:30"];
       needsUpdate = true;
-      console.log('🔄 Migrated whatsappSchedule to new format');
     }
 
     if (needsUpdate) {
@@ -187,25 +169,10 @@ export async function GET(req: Request) {
     // Reset daily counters if needed
     s = await resetDailyCountersIfNeeded(s);
 
-    // Development mode check
     const isDevelopment = process.env.NODE_ENV === 'development' ||
       req.headers.get('x-development-mode') === 'true';
 
-    console.log('Cron job started - Settings check:', {
-      automationEnabled: s.automationEnabled,
-      emailAutomationEnabled: s.emailAutomationEnabled,
-      whatsappAutomationEnabled: s.whatsappAutomationEnabled,
-      emailSchedule: s.emailSchedule,
-      whatsappSchedule: s.whatsappSchedule,
-      emailsSentToday: s.emailsSentToday,
-      whatsappSentToday: s.whatsappSentToday,
-      maxDailyEmails: s.maxDailyEmails,
-      maxDailyWhatsapp: s.maxDailyWhatsapp,
-      isDevelopment
-    });
-
     if (!s.automationEnabled) {
-      console.log('Automation is disabled - skipping cron job');
       return NextResponse.json({
         message: 'Automation disabled',
         automationEnabled: false
@@ -213,7 +180,6 @@ export async function GET(req: Request) {
     }
 
     if (shouldSkipToday(s)) {
-      console.log('Skipping today due to settings (weekend/holiday)');
       return NextResponse.json({
         message: 'Day skipped due to settings',
         skipped: true

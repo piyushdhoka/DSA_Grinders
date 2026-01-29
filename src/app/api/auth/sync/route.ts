@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
-    console.log('--- AUTH SYNC START ---');
     try {
         const authHeader = req.headers.get('authorization');
 
@@ -14,29 +13,22 @@ export async function POST(req: Request) {
         }
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            console.error('Sync failed: Missing or invalid authorization header');
             return NextResponse.json({ error: 'Missing or invalid authorization header' }, { status: 401 });
         }
 
         const token = authHeader.split(' ')[1];
-        console.log('Sync: Extracting user from Supabase with token...');
         const { data: { user }, error } = await supabase.auth.getUser(token);
 
         if (error || !user) {
-            console.error('Sync failed: Invalid Supabase session', error);
             return NextResponse.json({ error: 'Invalid Supabase session' }, { status: 401 });
         }
-
-        console.log(`Sync: Authenticated user ${user.email}`);
 
         // Email is guaranteed by Google Auth
         const email = user.email?.toLowerCase();
         if (!email) {
-            console.error('Sync failed: Email not found in Google profile');
             return NextResponse.json({ error: 'Email not found in Google profile' }, { status: 400 });
         }
 
-        console.log('Sync: Checking database for existing user...');
         const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (!existingUser) {

@@ -86,8 +86,6 @@ async function fetchLeetCodeUser(username: string) {
 
   const data = await response.json();
 
-  // Log the response to debug
-  console.log(`[LeetCode API] Response for ${username}:`, JSON.stringify(data, null, 2));
 
   return data.data;
 }
@@ -120,13 +118,6 @@ export async function fetchLeetCodeStats(username: string) {
 
     const country = userStats.matchedUser.profile?.countryName || '';
 
-    // Debug: Log avatar data
-    console.log(`[LeetCode] Fetched data for ${username}:`, {
-      avatarFromAPI,
-      avatarFinal: avatar,
-      country,
-      hasProfile: !!userStats.matchedUser.profile,
-    });
 
     // Calculate streak from submission calendar
     const calendar = userStats.matchedUser.submissionCalendar;

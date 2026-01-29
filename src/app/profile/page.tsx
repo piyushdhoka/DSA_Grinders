@@ -97,21 +97,21 @@ export default function ProfilePage() {
         <div className="min-h-screen bg-white text-gray-800 font-sans">
             {/* Header */}
             <header className="fixed top-0 inset-x-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-200">
-                <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                <div className="max-w-[1200px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2 md:gap-4">
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => router.push('/home')}
-                            className="text-gray-600 hover:bg-gray-50 hover:text-blue-600 font-medium rounded-full px-3"
+                            className="text-gray-600 hover:bg-gray-50 hover:text-blue-600 font-medium rounded-full px-2 md:px-3"
                         >
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back to Home
+                            <ArrowLeft className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Back to Home</span>
                         </Button>
                         <div className="h-6 w-px bg-gray-200"></div>
-                        <div className="flex items-center gap-3">
-                            <Image src="/logo.png" alt="Logo" width={32} height={32} className="object-contain" priority />
-                            <span className="text-xl font-medium tracking-tight text-gray-500">
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <Image src="/logo.png" alt="Logo" width={24} height={24} className="object-contain md:w-8 md:h-8" priority />
+                            <span className="text-lg md:text-xl font-medium tracking-tight text-gray-500">
                                 DSA <span className="text-gray-900 font-semibold">Grinders</span>
                             </span>
                         </div>
@@ -121,15 +121,15 @@ export default function ProfilePage() {
 
             <main className="max-w-[1100px] mx-auto pt-24 pb-12 px-6">
                 {/* Page Title & Breadcrumb */}
-                <div className="mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
-                    <div className="flex items-center gap-2 text-sm text-blue-600 font-bold uppercase tracking-widest mb-2">
+                <div className="mb-8 md:mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
+                    <div className="flex items-center gap-2 text-xs text-blue-600 font-bold uppercase tracking-widest mb-2">
                         <Settings className="w-4 h-4" />
                         Account Settings
                     </div>
-                    <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
+                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
                         Refine Your Profile
                     </h1>
-                    <p className="text-xl text-gray-500 font-medium max-w-xl">
+                    <p className="text-base md:text-xl text-gray-500 font-medium max-w-xl">
                         Keep your social handles and notification preferences up to date to stay ahead in the grind.
                     </p>
                 </div>
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column: Profile Card */}
                     <div className="lg:col-span-2 space-y-6">
-                        <section className="bg-white rounded-4xl border border-gray-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                        <section className="bg-white rounded-3xl md:rounded-4xl border border-gray-100 p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 blur-2xl transition-transform group-hover:scale-110" />
 
                             <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-50">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-end">
                                         {/* Phone Number */}
                                         <div className="space-y-2.5">
                                             <Label htmlFor="phoneNumber" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -259,7 +259,7 @@ export default function ProfilePage() {
                                                 onChange={(e) => setPhoneNumber(e.target.value)}
                                                 required
                                                 disabled={isSaving}
-                                                className="h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all rounded-[1.25rem] text-base font-medium"
+                                                className="h-12 md:h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all rounded-2xl md:rounded-[1.25rem] text-sm md:text-base font-medium"
                                                 placeholder="+91..."
                                             />
                                         </div>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                                         {/* Save Button */}
                                         <Button
                                             type="submit"
-                                            className="h-14 bg-gray-900 hover:bg-black text-white font-bold rounded-[1.25rem] text-base shadow-xl shadow-gray-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                                            className="h-12 md:h-14 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl md:rounded-[1.25rem] text-sm md:text-base shadow-xl shadow-gray-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                                             disabled={isSaving}
                                         >
                                             {isSaving ? (
@@ -287,7 +287,7 @@ export default function ProfilePage() {
 
                     {/* Right Column: Platform Status */}
                     <div className="space-y-6">
-                        <div className="bg-linear-to-br from-blue-600 to-indigo-700 rounded-4xl p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
+                        <div className="bg-linear-to-br from-blue-600 to-indigo-700 rounded-3xl md:rounded-4xl p-6 md:p-8 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
                             <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                                 <span className="bg-white/20 p-2 rounded-xl">⚡</span>
@@ -305,7 +305,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 rounded-4xl border border-gray-100 p-8">
+                        <div className="bg-gray-50 rounded-3xl md:rounded-4xl border border-gray-100 p-6 md:p-8">
                             <h3 className="font-bold text-gray-900 mb-4">Notification Center</h3>
                             <ul className="space-y-4">
                                 <li className="flex gap-3 text-sm text-gray-600 font-medium">

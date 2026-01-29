@@ -18,13 +18,13 @@ export const groups = pgTable('groups', {
   name: varchar('name', { length: 255 }).notNull(),
   code: varchar('code', { length: 32 }).notNull().unique(),
   description: text('description'),
-  owner: integer('owner').notNull().references(() => users.id),
+  owner: integer('owner').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 export const groupMembers = pgTable('group_members', {
-  groupId: integer('group_id').notNull().references(() => groups.id),
-  userId: integer('user_id').notNull().references(() => users.id),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 }, (table) => ({
   pk: primaryKey({ columns: [table.groupId, table.userId] }),
 }));
@@ -67,7 +67,7 @@ export const messageTemplates = pgTable('message_templates', {
 
 export const dailyStats = pgTable('daily_stats', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   date: varchar('date', { length: 16 }).notNull(),
   easy: integer('easy').default(0),
   medium: integer('medium').default(0),

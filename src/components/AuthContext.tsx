@@ -33,13 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
+    const lastSyncedToken = React.useRef<string | null>(null);
+
     useEffect(() => {
         // Initial session check
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                setToken(session.access_token);
-                await syncUserWithDB(session.access_token);
+                if (session.access_token !== lastSyncedToken.current) {
+                    lastSyncedToken.current = session.access_token;
+                    setToken(session.access_token);
+                    await syncUserWithDB(session.access_token);
+                }
             } else {
                 setIsLoading(false);
             }
@@ -51,7 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
             if (event === 'SIGNED_IN' && session) {
                 // If we already have a user and token, don't re-sync unless session is different
-                if (session.access_token !== token) {
+                if (session.access_token !== lastSyncedToken.current) {
+                    lastSyncedToken.current = session.access_token;
                     setToken(session.access_token);
                     await syncUserWithDB(session.access_token);
                 }
