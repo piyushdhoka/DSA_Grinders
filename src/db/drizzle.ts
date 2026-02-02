@@ -7,22 +7,22 @@ const globalForPool = globalThis as unknown as { pool: Pool | undefined };
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Connection pool settings optimized for serverless + Supabase Transaction Mode
 const pool = globalForPool.pool || new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes('supabase') || process.env.DATABASE_URL?.includes('neon')
     ? { rejectUnauthorized: false }
     : false,
-  // Connection pool settings
-  max: isProduction ? 5 : 10, // Lower in production (serverless)
-  min: 0, // Don't maintain idle connections
-  idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-  connectionTimeoutMillis: 5000, // Fail fast if can't connect in 5s
-  maxUses: 7500, // Close connection after 7500 queries (prevents memory leaks)
-  allowExitOnIdle: true, // Allow process to exit if all connections are idle
+  max: 1, // Minimize connections per serverless instance to avoid pooler exhaust
+  min: 0,
+  idleTimeoutMillis: 10000, // Faster closing of idle connections
+  connectionTimeoutMillis: 10000,
+  maxUses: 100, // Recycle connections frequently
+  allowExitOnIdle: true,
 });
 
-// Reuse pool in development to avoid creating too many during hot reloads
-if (!isProduction) globalForPool.pool = pool;
+// Reuse pool in ALL environments to avoid creating too many during hot reloads or serverless reuse
+globalForPool.pool = pool;
 
 export const db = drizzle(pool, { schema });
 

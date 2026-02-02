@@ -33,63 +33,86 @@ export const GET = requireAuth(async (req: NextRequest, user, context) => {
             return NextResponse.json({ error: 'You are not a member of this group' }, { status: 403 });
         }
 
-        // Get members
-        const members = await db.select({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-            leetcodeUsername: users.leetcodeUsername,
-            github: users.github,
-            linkedin: users.linkedin,
-        })
-            .from(users)
-            .innerJoin(groupMembers, eq(groupMembers.userId, users.id))
-            .where(eq(groupMembers.groupId, groupId));
-
         const today = getTodayDate();
 
-        const leaderboard = [];
-        for (const member of members) {
-            // Get today's stat
-            const [todayStat] = await db.select()
-                .from(dailyStats)
-                .where(and(eq(dailyStats.userId, member.id), eq(dailyStats.date, today)))
-                .limit(1);
+        // Optimized query to fetch all members and their stats in a single go
+        const result = await db.execute(sql`
+            WITH latest_stats AS (
+                SELECT DISTINCT ON (user_id) 
+                    user_id,
+                    date,
+                    easy,
+                    medium,
+                    hard,
+                    total,
+                    ranking,
+                    avatar,
+                    country,
+                    streak,
+                    last_submission,
+                    recent_problems
+                FROM daily_stats
+                ORDER BY user_id, date DESC
+            ),
+            today_stats AS (
+                SELECT user_id, today_points
+                FROM daily_stats
+                WHERE date = ${today}
+            )
+            SELECT 
+                u.id,
+                u.name,
+                u.email,
+                u.leetcode_username as "leetcodeUsername",
+                u.github,
+                u.linkedin,
+                COALESCE(t.today_points, 0) as "todayPoints",
+                COALESCE(l.easy, 0) as easy,
+                COALESCE(l.medium, 0) as medium,
+                COALESCE(l.hard, 0) as hard,
+                COALESCE(l.total, 0) as "totalProblems",
+                COALESCE(l.ranking, 0) as ranking,
+                COALESCE(l.avatar, '') as avatar,
+                COALESCE(l.country, '') as country,
+                COALESCE(l.streak, 0) as streak,
+                l.last_submission as "lastSubmission",
+                l.recent_problems as "recentProblems"
+            FROM group_members gm
+            JOIN users u ON gm.user_id = u.id
+            LEFT JOIN latest_stats l ON u.id = l.user_id
+            LEFT JOIN today_stats t ON u.id = t.user_id
+            WHERE gm.group_id = ${groupId}
+        `);
 
-            // Get latest stat for other data points
-            const [latestStat] = await db.select()
-                .from(dailyStats)
-                .where(eq(dailyStats.userId, member.id))
-                .orderBy(desc(dailyStats.date))
-                .limit(1);
-
-            const easy = latestStat?.easy ?? 0;
-            const medium = latestStat?.medium ?? 0;
-            const hard = latestStat?.hard ?? 0;
+        // Transform and sort leaderboard
+        const leaderboard = (result.rows as any[]).map((row) => {
+            const easy = Number(row.easy) || 0;
+            const medium = Number(row.medium) || 0;
+            const hard = Number(row.hard) || 0;
             const totalScore = easy * 1 + medium * 3 + hard * 6;
 
-            leaderboard.push({
-                id: member.id,
-                name: member.name,
-                email: member.email,
-                leetcodeUsername: member.leetcodeUsername,
-                todayPoints: todayStat?.todayPoints || 0,
-                totalScore: totalScore,
-                totalProblems: latestStat?.total || 0,
-                easy: easy,
-                medium: medium,
-                hard: hard,
-                ranking: latestStat?.ranking || 0,
-                avatar: latestStat?.avatar || '',
-                country: latestStat?.country || '',
-                streak: latestStat?.streak || 0,
-                lastSubmission: latestStat?.lastSubmission || null,
-                recentProblems: latestStat?.recentProblems || [],
-                github: member.github || null,
-                linkedin: member.linkedin || null,
+            return {
+                id: row.id,
+                name: row.name,
+                email: row.email,
+                leetcodeUsername: row.leetcodeUsername,
+                todayPoints: Number(row.todayPoints) || 0,
+                totalScore,
+                totalProblems: Number(row.totalProblems) || 0,
+                easy,
+                medium,
+                hard,
+                ranking: Number(row.ranking) || 0,
+                avatar: row.avatar || '',
+                country: row.country || '',
+                streak: Number(row.streak) || 0,
+                lastSubmission: row.lastSubmission || null,
+                recentProblems: row.recentProblems || [],
+                github: row.github || null,
+                linkedin: row.linkedin || null,
                 rank: 0,
-            });
-        }
+            };
+        });
 
         // Sort based on type
         const searchParams = new URL(req.url).searchParams;
@@ -132,10 +155,13 @@ export const GET = requireAuth(async (req: NextRequest, user, context) => {
                     ds.recent_problems as "recentProblems"
                 FROM daily_stats ds
                 JOIN users u ON ds.user_id = u.id
-                WHERE ds.date >= ${threeDaysAgoStr}
+                JOIN group_members gm ON u.id = gm.user_id
+                WHERE gm.group_id = ${groupId}
+                    AND ds.date >= ${threeDaysAgoStr}
                     AND u.role != 'admin'
                     AND u.leetcode_username NOT LIKE 'pending_%'
                 ORDER BY ds.date DESC
+                LIMIT 50
             `);
 
             const seenIds = new Set<string>();

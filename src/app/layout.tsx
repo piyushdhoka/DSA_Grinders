@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
 import SplashScreen from "@/components/SplashScreen";
 import OnboardingModal from "@/components/OnboardingModal";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://dsa-grinders.vercel.app'),
@@ -92,8 +93,10 @@ export default function RootLayout({
           <SplashScreen />
           <ErrorReporter />
           <AuthProvider>
-            {children}
-            <OnboardingModal />
+            <Providers>
+              {children}
+              <OnboardingModal />
+            </Providers>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

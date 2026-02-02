@@ -213,6 +213,7 @@ export async function GET(request: NextRequest) {
           AND u.role != 'admin'
           AND u.leetcode_username NOT LIKE 'pending_%'
         ORDER BY ds.date DESC
+        LIMIT 100
       `);
 
       // Flatten and de-duplicate activities
