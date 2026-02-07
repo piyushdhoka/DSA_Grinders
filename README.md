@@ -1,3 +1,4 @@
+
 # DSA Grinders 🚀
 
 A premium, competitive learning platform for Data Structures & Algorithms (DSA) that integrates with LeetCode to track progress, compete with friends, and stay motivated through daily syncs and roasts.
