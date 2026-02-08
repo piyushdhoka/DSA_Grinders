@@ -38,7 +38,7 @@ export async function generateDynamicRoast(userName: string): Promise<DynamicCon
                         OUTPUT FORMAT (Strict JSON):
                         {
                           "dashboardRoast": "A 1-sentence extremely toxic roast in Hinglish for the dashboard UI. Use [NAME] to refer to the user.",
-                          "fullMessage": "Generate the ENTIRE message. Start with a toxic/hostile greeting for [NAME]. Then write a 3-4 sentence hyper-toxic and abusive paragraph shaming them for not solving problems today. No hardcoded headers like 'Wake up'. End it with: \\n\\n💻 Solve: https://leetcode.com/problemset/ \\n🌐 Track: ${SITE_URL} \\n\\nDSA Grinder Team 💀"
+                          "fullMessage": "Generate the ENTIRE message. Start with a toxic/hostile greeting for [NAME]. Then write a 1-2 sentence hyper-toxic and abusive paragraph shaming them for not solving problems today. No hardcoded headers like 'Wake up'. End it with: \\n\\n💻 Solve: https://leetcode.com/problemset/ \\n🌐 Track: ${SITE_URL} \\n\\nDSA Grinder Team 💀"
                         }`
                     },
                     {

@@ -1,26 +1,28 @@
-import { User, DailyStat, Group, Setting } from '@/db/schema';
+import { User, Group } from '@/db/schema';
 
-export type { User, DailyStat, Group, Setting };
+export type { User, Group };
 
 // ============================================================
 // User Types
 // ============================================================
 
 export interface AuthenticatedUser {
-    id: number;
+    id: string; // Changed to string for UUID
     name: string;
     email: string;
     leetcodeUsername: string;
-    gfgUsername?: string | null; // New field
     github: string;
     linkedin: string | null;
     phoneNumber: string | null;
     role: string;
+    onboardingCompleted: boolean;
+    groupMemberOf?: string | null;
     isProfileIncomplete: boolean;
+    dailyGrindTime?: string | null;
 }
 
 export interface PublicUserProfile {
-    id: number;
+    id: string; // Changed to string for UUID
     name: string;
     leetcodeUsername: string;
     github?: string;
@@ -60,78 +62,17 @@ export interface LeetCodeAPIError {
 }
 
 // ============================================================
-// GeeksforGeeks Types
+// Leaderboard Types
 // ============================================================
-
-export interface GFGSubmission {
-    id: string;
-    title: string;
-    titleSlug: string;
-    timestamp: string;
-}
-
-export interface GFGStats {
-    easy: number;
-    medium: number;
-    hard: number;
-    total: number;
-    ranking: number;
-    avatar: string;
-    country: string;
-    recentSubmissions: GFGSubmission[];
-    streak: number;
-    lastSubmission: string | null;
-}
-
-export interface GFGAPIError {
-    code: 'USER_NOT_FOUND' | 'PROFILE_PRIVATE' | 'RATE_LIMITED' | 'NETWORK_ERROR' | 'SCRAPING_ERROR';
-    message: string;
-    retryable: boolean;
-}
-
-// ============================================================
-// Multi-Platform Types
-// ============================================================
-
-export interface PlatformStats {
-    easy: number;
-    medium: number;
-    hard: number;
-    total: number;
-    todayPoints: number;
-    ranking?: number;
-    avatar?: string;
-    country?: string;
-    streak?: number;
-    lastSubmission?: string | null;
-}
-
-export interface MultiPlatformUser {
-    id: number;
-    name: string;
-    email: string;
-    leetcodeUsername: string;
-    gfgUsername?: string | null;
-    platforms: {
-        leetcode?: PlatformStats;
-        gfg?: PlatformStats;
-    };
-    combinedStats: {
-        totalEasy: number;
-        totalMedium: number;
-        totalHard: number;
-        totalProblems: number;
-        totalTodayPoints: number;
-        totalScore: number;
-    };
-}
 
 export interface LeaderboardEntry {
-    id: number;
+    id: string; // UUID
     name: string;
     email: string;
     leetcodeUsername: string;
-    gfgUsername?: string | null; // New field
+    gfgUsername?: string;
+    gfgSolved?: number;
+    gfgScore?: number;
     todayPoints: number;
     totalScore: number;
     totalProblems: number;
@@ -142,15 +83,11 @@ export interface LeaderboardEntry {
     avatar?: string;
     country?: string;
     streak?: number;
-    lastSubmission?: string;
+    lastSubmission?: string | null;
     recentProblems?: LeetCodeSubmission[];
     github?: string;
     linkedin?: string;
     rank: number;
-    platforms?: {
-        leetcode?: PlatformStats;
-        gfg?: PlatformStats;
-    }; // New field for platform breakdown
 }
 
 // ============================================================
@@ -174,13 +111,12 @@ export interface ApiSuccessResponse<T> {
 export interface ApiErrorResponse {
     error: string;
     code?: string;
-    details?: string;
+    details?: any;
     retryable?: boolean;
 }
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-// Type guard to check if response is an error
 export function isApiError(response: ApiResponse<unknown>): response is ApiErrorResponse {
     return 'error' in response;
 }
@@ -203,7 +139,7 @@ export interface ProfileUpdateRequest {
     github?: string;
     linkedin?: string | null;
     leetcodeUsername?: string;
-    gfgUsername?: string | null; // New field
+    dailyGrindTime?: string | null;
 }
 
 export interface ProfileUpdateResponse {
@@ -231,20 +167,6 @@ export interface CronJobSummary {
     emailsSkipped: number;
     whatsappSkipped: number;
 }
-
-// ============================================================
-// Settings Types (extends schema)
-// ============================================================
-
-export interface AutomationSettings extends Setting {
-    emailSchedule: string[];
-    whatsappSchedule: string[];
-    customSkipDates: string[];
-}
-
-// ============================================================
-// Message Types
-// ============================================================
 
 export interface SendMessageResult {
     success: boolean;

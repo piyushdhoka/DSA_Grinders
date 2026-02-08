@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Trophy, Target, Crown, LogOut, Github, Linkedin, Users, Plus, Hash, Copy, Settings, ChevronRight, Flame, Medal, Link as LinkIcon, Share2 } from "lucide-react";
+import { Loader2, RefreshCw, Trophy, Target, Crown, LogOut, Github, Linkedin, Users, Plus, Hash, Copy, Settings, ChevronRight, Flame, Medal, Link as LinkIcon, Share2, X } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { getRandomRoast } from "@/config/messages";
 import ActivityFeed from "@/components/ActivityFeed";
-import { LeaderboardEntry, LeetCodeSubmission, Group } from "@/types";
+import { LeaderboardEntry, LeetCodeSubmission, GroupWithMembership } from "@/types";
 import LeaderboardRow from "@/components/LeaderboardRow";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -28,7 +28,7 @@ export default function HomePage() {
 
     // UI State
     const [leaderboardType, setLeaderboardType] = useState<'daily' | 'allTime'>('daily');
-    const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+    const [activeGroup, setActiveGroup] = useState<GroupWithMembership | null>(null);
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
     const [isJoinGroupOpen, setIsJoinGroupOpen] = useState(false);
     const [newGroupName, setNewGroupName] = useState("");
@@ -36,6 +36,7 @@ export default function HomePage() {
     const [joinCode, setJoinCode] = useState("");
     const [modalError, setModalError] = useState("");
     const [roast, setRoast] = useState("");
+    const [groupToLeave, setGroupToLeave] = useState<GroupWithMembership | null>(null);
 
     useEffect(() => {
         setRoast(getRandomRoast());
@@ -58,11 +59,11 @@ export default function HomePage() {
 
     // Fetch Leaderboard
     const { data: leaderboardData, isLoading, dataUpdatedAt } = useQuery({
-        queryKey: ["leaderboard", activeGroup?.id, leaderboardType, token],
+        queryKey: ["leaderboard", activeGroup?.code, leaderboardType, token],
         queryFn: async () => {
             const endpoint = activeGroup
-                ? `/api/groups/${activeGroup.id}/leaderboard?type=${leaderboardType}`
-                : `/api/leaderboard?type=${leaderboardType}&platform=separate`;
+                ? `/api/groups/${activeGroup.code}/leaderboard?type=${leaderboardType}`
+                : `/api/leaderboard?type=${leaderboardType}`;
 
             const res = await fetch(endpoint, {
                 headers: token ? { "Authorization": `Bearer ${token}` } : {}
@@ -154,8 +155,37 @@ export default function HomePage() {
         }
     });
 
+    const leaveGroupMutation = useMutation({
+        mutationFn: async (groupId: string) => {
+            const res = await fetch("/api/groups/leave", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ groupId })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to leave group");
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["groups"] });
+            // If we left the currently active group, switch to global
+            if (activeGroup?.id === groupToLeave?.id) {
+                setActiveGroup(null);
+            }
+            setGroupToLeave(null);
+            toast.success(data.groupDeleted ? "Group deleted" : "Left group successfully!");
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to leave group");
+            setGroupToLeave(null);
+        }
+    });
+
     const isRefreshing = refreshMutation.isPending;
-    const isSubmitting = createGroupMutation.isPending || joinGroupMutation.isPending;
+    const isSubmitting = createGroupMutation.isPending || joinGroupMutation.isPending || leaveGroupMutation.isPending;
 
     const refreshStats = () => {
         refreshMutation.mutate();
@@ -184,7 +214,7 @@ export default function HomePage() {
         return process.env.NEXT_PUBLIC_APP_URL || 'https://dsa-grinders.vercel.app';
     };
 
-    const handleShareGroup = async (group: Group) => {
+    const handleShareGroup = async (group: GroupWithMembership) => {
         try {
             const baseUrl = getBaseUrl();
             const shareUrl = `${baseUrl}/home?join=${group.code}`;
@@ -351,16 +381,30 @@ export default function HomePage() {
                                         {Array.isArray(userGroups) && userGroups.length > 0 && <DropdownMenuSeparator className="opacity-50" />}
                                         <div className="max-h-[200px] overflow-y-auto pr-1">
                                             {Array.isArray(userGroups) && userGroups.map(group => (
-                                                <DropdownMenuItem
-                                                    key={group.id}
-                                                    onClick={() => setActiveGroup(group)}
-                                                    className={`cursor-pointer flex items-center justify-between rounded-xl mb-1 ${activeGroup?.id === group.id ? 'bg-[#D2E3FC] text-[#174EA6] font-bold' : ''}`}
-                                                >
-                                                    <span className="truncate">{group?.name}</span>
-                                                    {activeGroup?.id === group.id && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
-                                                    )}
-                                                </DropdownMenuItem>
+                                                <div key={group.code} className="flex items-center gap-1 mb-1">
+                                                    <DropdownMenuItem
+                                                        onClick={() => setActiveGroup(group)}
+                                                        className={`cursor-pointer flex-1 flex items-center justify-between rounded-xl ${activeGroup?.code === group.code ? 'bg-[#D2E3FC] text-[#174EA6] font-bold' : ''}`}
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <span className="truncate">{group?.name}</span>
+                                                            {group.memberCount && <span className="text-[10px] text-muted-foreground">({group.memberCount})</span>}
+                                                        </div>
+                                                        {activeGroup?.code === group.code && (
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                                                        )}
+                                                    </DropdownMenuItem>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setGroupToLeave(group);
+                                                        }}
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                        title={group.isOwner ? "Delete group" : "Leave group"}
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                             ))}
                                         </div>
                                         <DropdownMenuSeparator className="opacity-50" />
@@ -401,6 +445,15 @@ export default function HomePage() {
                                     >
                                         <Share2 className="w-3.5 h-3.5" />
                                         <span className="hidden sm:inline">Share Link</span>
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setGroupToLeave(activeGroup)}
+                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full px-3 py-1.5 h-auto text-xs font-medium"
+                                        title="Leave group"
+                                    >
+                                        <LogOut className="w-3.5 h-3.5" />
                                     </Button>
                                 </div>
                             )}
@@ -521,7 +574,7 @@ export default function HomePage() {
                                     </div>
                                 </div>
                                 <motion.div
-                                    key={`leaderboard-${activeGroup?.id ?? 'global'}-${leaderboardType}`}
+                                    key={`leaderboard-${activeGroup?.code ?? 'global'}-${leaderboardType}`}
                                     className="divide-y divide-gray-100"
                                     initial="hidden"
                                     animate="visible"
@@ -534,7 +587,7 @@ export default function HomePage() {
                                         <LeaderboardRow
                                             key={entry.id}
                                             entry={entry}
-                                            index={index}
+                                            rank={index + 1}
                                             isCurrentUser={entry?.email === user?.email}
                                         />
                                     ))}
@@ -597,6 +650,39 @@ export default function HomePage() {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Leave Group Confirmation Dialog */}
+            <Dialog open={!!groupToLeave} onOpenChange={(open) => !open && setGroupToLeave(null)}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">
+                            {groupToLeave?.isOwner ? 'Delete Group?' : 'Leave Group?'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {groupToLeave?.isOwner
+                                ? `You are the owner of "${groupToLeave?.name}". Since you're the only member, leaving will delete the group permanently.`
+                                : `Are you sure you want to leave "${groupToLeave?.name}"? You can rejoin later with the group code.`
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button type="button" variant="outline" onClick={() => setGroupToLeave(null)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => groupToLeave && leaveGroupMutation.mutate(groupToLeave.id)}
+                            disabled={leaveGroupMutation.isPending}
+                        >
+                            {leaveGroupMutation.isPending ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{groupToLeave?.isOwner ? 'Deleting...' : 'Leaving...'}</>
+                            ) : (
+                                groupToLeave?.isOwner ? 'Delete Group' : 'Leave Group'
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
             <PWAInstallPrompt />

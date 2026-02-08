@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, AuthUser } from '@/lib/auth';
 import { db } from '@/db/drizzle';
 import { groups, groupMembers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export const POST = requireAuth(async (req: NextRequest, user: any) => {
+export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
     try {
         const { code } = await req.json();
 
@@ -12,27 +12,32 @@ export const POST = requireAuth(async (req: NextRequest, user: any) => {
             return NextResponse.json({ error: 'Group code is required' }, { status: 400 });
         }
 
+        const normalizedCode = code.toUpperCase();
+
         // Find group by code
-        const [group] = await db.select().from(groups).where(eq(groups.code, code.toUpperCase())).limit(1);
+        const [group] = await db.select().from(groups).where(eq(groups.code, normalizedCode)).limit(1);
 
         if (!group) {
             return NextResponse.json({ error: 'Invalid group code' }, { status: 404 });
         }
 
-        // Check if already a member
-        const [existingMember] = await db.select()
+        // Check if already a member of this specific group
+        const [existingMembership] = await db.select()
             .from(groupMembers)
-            .where(and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)))
+            .where(and(
+                eq(groupMembers.userId, user.id),
+                eq(groupMembers.groupId, group.id)
+            ))
             .limit(1);
 
-        if (existingMember) {
+        if (existingMembership) {
             return NextResponse.json({ error: 'You are already a member of this group' }, { status: 400 });
         }
 
-        // Add user to group members
+        // Add user to group via join table (supports multi-group membership)
         await db.insert(groupMembers).values({
-            groupId: group.id,
             userId: user.id,
+            groupId: group.id,
         });
 
         return NextResponse.json({

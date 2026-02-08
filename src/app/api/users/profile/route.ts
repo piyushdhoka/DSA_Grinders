@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { db } from '@/db/drizzle';
-import { users, User } from '@/db/schema';
+import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { updateDailyStatsForUser, LeetCodeError } from '@/lib/leetcode';
-import { updateDailyStatsForUserGFG, GFGError } from '@/lib/gfg';
 import { profileUpdateSchema, validateRequest, createErrorResponse } from '@/lib/validation';
-import type { AuthenticatedUser } from '@/types';
 
-// Type for the update payload
 interface UserUpdatePayload {
   name?: string;
   github?: string;
   linkedin?: string | null;
   leetcodeUsername?: string;
-  gfgUsername?: string | null;
   phoneNumber?: string | null;
+  gfgUsername?: string | null;
+  onboardingCompleted?: boolean;
 }
 
 export const PUT = requireAuth(async (req: NextRequest, user) => {
   try {
-    // Manual admin cannot update profile through this endpoint
-    if (typeof user.id === 'string') {
+    if (user.id === 'manual_admin') {
       return NextResponse.json(
         createErrorResponse('Manual admin cannot update profile', 'FORBIDDEN'),
         { status: 403 }
@@ -30,7 +27,6 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
 
     const body = await req.json();
 
-    // Validate request body with Zod
     const validation = validateRequest(profileUpdateSchema, body);
     if (!validation.success) {
       return NextResponse.json(
@@ -39,12 +35,11 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { name, phoneNumber, github, linkedin, leetcodeUsername, gfgUsername } = validation.data;
+    const { name, phoneNumber, github, linkedin, leetcodeUsername } = validation.data;
 
     const updateData: UserUpdatePayload = {};
     if (name) updateData.name = name;
 
-    // Attach links if only usernames are provided
     if (github) {
       updateData.github = github.startsWith('http') ? github : `https://github.com/${github.replace('@', '')}`;
     }
@@ -59,16 +54,19 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
 
     if (leetcodeUsername) updateData.leetcodeUsername = leetcodeUsername;
 
-    if (gfgUsername !== undefined) {
-      updateData.gfgUsername = gfgUsername || null;
-    }
-
     if (phoneNumber !== undefined) {
       updateData.phoneNumber = phoneNumber ? phoneNumber.replace(/\s/g, '') : null;
     }
 
+
+
+    // Mark onboarding as completed if this is the initial setup
+    if ('onboardingCompleted' in user && !user.onboardingCompleted) {
+      updateData.onboardingCompleted = true;
+    }
+
     const [updatedUser] = await db.update(users)
-      .set(updateData)
+      .set(updateData as any)
       .where(eq(users.id, user.id))
       .returning();
 
@@ -85,41 +83,16 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
         await updateDailyStatsForUser(updatedUser.id, updatedUser.leetcodeUsername);
       } catch (syncError) {
         console.error('Initial LeetCode sync failed:', syncError);
-        // Handle LeetCode-specific errors with user-friendly messages
         if (syncError instanceof LeetCodeError) {
           return NextResponse.json(
             createErrorResponse(syncError.message, syncError.code),
             { status: 400 }
           );
         }
-        // Check for user not found in generic errors
-        if (syncError instanceof Error &&
-          (syncError.message.includes('not found') || syncError.message.includes('does not exist'))) {
-          return NextResponse.json(
-            createErrorResponse(syncError.message, 'LEETCODE_USER_NOT_FOUND'),
-            { status: 400 }
-          );
-        }
       }
     }
 
-    // Trigger immediate GFG sync if username was set
-    if (gfgUsername && updatedUser.gfgUsername) {
-      try {
-        await updateDailyStatsForUserGFG(updatedUser.id, updatedUser.gfgUsername);
-      } catch (syncError) {
-        console.error('Initial GFG sync failed:', syncError);
-        // Handle GFG-specific errors with user-friendly messages
-        if (syncError instanceof GFGError) {
-          return NextResponse.json(
-            createErrorResponse(syncError.message, syncError.code),
-            { status: 400 }
-          );
-        }
-      }
-    }
-
-    // Calculate isProfileIncomplete using the same logic as auth sync
+    // Recalculate profile completion
     const isProfileIncomplete =
       !updatedUser.leetcodeUsername ||
       updatedUser.leetcodeUsername.startsWith('pending_') ||
@@ -128,20 +101,13 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
       !updatedUser.phoneNumber ||
       !updatedUser.linkedin;
 
-    const responseUser: AuthenticatedUser = {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      leetcodeUsername: updatedUser.leetcodeUsername,
-      gfgUsername: updatedUser.gfgUsername,
-      github: updatedUser.github,
-      linkedin: updatedUser.linkedin,
-      phoneNumber: updatedUser.phoneNumber,
-      role: updatedUser.role,
-      isProfileIncomplete,
-    };
+    return NextResponse.json({
+      user: {
+        ...updatedUser,
+        isProfileIncomplete
+      }
+    });
 
-    return NextResponse.json({ user: responseUser });
   } catch (error) {
     console.error('Profile update error:', error);
     const message = error instanceof Error ? error.message : 'An unexpected error occurred';

@@ -38,13 +38,7 @@ const ROAST_LEVELS = [
     }
 ];
 
-const GRIND_TIMES = [
-    { value: '06:00', label: '6:00 AM', desc: 'Early Bird' },
-    { value: '08:00', label: '8:00 AM', desc: 'Morning Grind' },
-    { value: '12:00', label: '12:00 PM', desc: 'Lunch Break' },
-    { value: '18:00', label: '6:00 PM', desc: 'Evening Hustle' },
-    { value: '21:00', label: '9:00 PM', desc: 'Night Owl' },
-];
+const totalSteps = 4;
 
 export default function PremiumOnboarding() {
     const { user, token, updateUser } = useAuth();
@@ -52,19 +46,18 @@ export default function PremiumOnboarding() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [leetcodeStats, setLeetcodeStats] = useState<any>(null);
-    
+
     const [formData, setFormData] = useState({
         leetcodeUsername: '',
+        gfgUsername: '',
         phoneNumber: '',
         countryCode: '+91',
         github: '',
         linkedin: '',
-        gfgUsername: '',
         roastIntensity: 'medium' as 'mild' | 'medium' | 'savage',
-        dailyGrindTime: '09:00'
     });
 
-    const totalSteps = 6;
+    const totalSteps = 5;
 
     if (!user) return null;
 
@@ -79,9 +72,7 @@ export default function PremiumOnboarding() {
             // Call our API to validate and fetch stats
             const res = await fetch(`/api/leetcode/validate?username=${encodeURIComponent(formData.leetcodeUsername)}`);
             const data = await res.json();
-            
-            console.log('Validation response:', { status: res.status, ok: res.ok, data });
-            
+
             if (res.ok && data.exists) {
                 setLeetcodeStats(data.stats);
                 toast.success('LeetCode profile found!');
@@ -101,7 +92,7 @@ export default function PremiumOnboarding() {
         setIsSubmitting(true);
         try {
             const fullPhone = `${formData.countryCode}${formData.phoneNumber}`;
-            
+
             const res = await fetch('/api/users/onboarding', {
                 method: 'POST',
                 headers: {
@@ -110,12 +101,11 @@ export default function PremiumOnboarding() {
                 },
                 body: JSON.stringify({
                     leetcodeUsername: formData.leetcodeUsername,
+                    gfgUsername: formData.gfgUsername || undefined,
                     phoneNumber: fullPhone,
                     github: formData.github || undefined,
                     linkedin: formData.linkedin || undefined,
-                    gfgUsername: formData.gfgUsername || undefined,
                     roastIntensity: formData.roastIntensity,
-                    dailyGrindTime: formData.dailyGrindTime,
                     onboardingCompleted: true
                 })
             });
@@ -128,7 +118,7 @@ export default function PremiumOnboarding() {
                     spread: 70,
                     origin: { y: 0.6 }
                 });
-                
+
                 updateUser({ ...user, onboardingCompleted: true });
                 toast.success('Welcome to the Arena! 🔥');
             } else {
@@ -161,7 +151,7 @@ export default function PremiumOnboarding() {
                                 type="text"
                                 value={formData.leetcodeUsername}
                                 onChange={(e) => setFormData({ ...formData, leetcodeUsername: e.target.value })}
-                                placeholder="your_leetcode_username"
+                                placeholder="e.g. piyushdhoka"
                                 className="w-full px-6 py-4 bg-[#F1F3F4] dark:bg-gray-800 border-2 border-transparent focus:border-[#4285F4] rounded-2xl text-lg font-medium outline-none transition-all"
                                 onKeyDown={(e) => e.key === 'Enter' && validateLeetCode()}
                             />
@@ -266,11 +256,10 @@ export default function PremiumOnboarding() {
                                 <button
                                     key={level.id}
                                     onClick={() => setFormData({ ...formData, roastIntensity: level.id as any })}
-                                    className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
-                                        formData.roastIntensity === level.id
-                                            ? 'border-[#EA4335] bg-[#FAD2CF] dark:bg-red-900/20'
-                                            : 'border-[#E8EAED] dark:border-gray-700 hover:border-[#EA4335]/50'
-                                    }`}
+                                    className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${formData.roastIntensity === level.id
+                                        ? 'border-[#EA4335] bg-[#FAD2CF] dark:bg-red-900/20'
+                                        : 'border-[#E8EAED] dark:border-gray-700 hover:border-[#EA4335]/50'
+                                        }`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <span className="text-3xl">{level.emoji}</span>
@@ -304,51 +293,48 @@ export default function PremiumOnboarding() {
                             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#5F6368] to-[#202124] rounded-3xl flex items-center justify-center">
                                 <Target className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-3xl font-black text-[#202124] dark:text-white">Additional Profiles</h2>
+                            <h2 className="text-3xl font-black text-[#202124] dark:text-white">Coding Profiles</h2>
                             <p className="text-[#5F6368] dark:text-gray-400 max-w-sm mx-auto">
-                                Optional: Add your GFG, GitHub, and LinkedIn profiles
+                                Optional: Add your GFG, GitHub and LinkedIn profiles
                             </p>
                         </div>
 
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-semibold text-[#5F6368] dark:text-gray-400 mb-2">
-                                    <span className="inline-flex items-center gap-2">
-                                        <span className="w-4 h-4 bg-green-600 rounded text-white text-[10px] font-bold flex items-center justify-center">GFG</span>
-                                        GeeksforGeeks Username (Optional)
-                                    </span>
+                                    GeeksforGeeks Username
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.gfgUsername}
                                     onChange={(e) => setFormData({ ...formData, gfgUsername: e.target.value })}
-                                    placeholder="your-gfg-username"
+                                    placeholder="e.g. piyushdhoka"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#34A853] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-[#5F6368] dark:text-gray-400 mb-2">
-                                    GitHub Profile (Optional)
+                                    GitHub Username
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.github}
                                     onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                    placeholder="GitHub.com/your-username"
+                                    placeholder="e.g. piyushdhoka"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#4285F4] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-[#5F6368] dark:text-gray-400 mb-2">
-                                    LinkedIn Profile (Optional)
+                                    LinkedIn Username
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.linkedin}
                                     onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                    placeholder="LinkedIn.com/in/your-username"
+                                    placeholder="e.g. piyush-dhoka"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#4285F4] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
@@ -370,55 +356,8 @@ export default function PremiumOnboarding() {
 
             case 5:
                 return (
-                    <div className="space-y-6">
-                        <div className="text-center space-y-3">
-                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#FBBC04] to-[#E37400] rounded-3xl flex items-center justify-center">
-                                <Clock className="w-10 h-10 text-white" />
-                            </div>
-                            <h2 className="text-3xl font-black text-[#202124] dark:text-white">Daily Grind Time</h2>
-                            <p className="text-[#5F6368] dark:text-gray-400 max-w-sm mx-auto">
-                                When should we ping you daily? Choose wisely.
-                            </p>
-                        </div>
-
-                        <div className="space-y-3">
-                            {GRIND_TIMES.map((time) => (
-                                <button
-                                    key={time.value}
-                                    onClick={() => setFormData({ ...formData, dailyGrindTime: time.value })}
-                                    className={`w-full p-4 rounded-2xl border-2 transition-all ${
-                                        formData.dailyGrindTime === time.value
-                                            ? 'border-[#FBBC04] bg-[#FEEFC3] dark:bg-yellow-900/20'
-                                            : 'border-[#E8EAED] dark:border-gray-700 hover:border-[#FBBC04]/50'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-left">
-                                            <div className="font-bold text-[#202124] dark:text-white">{time.label}</div>
-                                            <div className="text-sm text-[#5F6368] dark:text-gray-400">{time.desc}</div>
-                                        </div>
-                                        {formData.dailyGrindTime === time.value && (
-                                            <CheckCircle2 className="w-6 h-6 text-[#FBBC04]" />
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={() => setStep(6)}
-                            className="w-full bg-[#FBBC04] hover:bg-[#E37400] text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
-                        >
-                            <span>Continue</span>
-                            <ArrowRight className="w-5 h-5" />
-                        </button>
-                    </div>
-                );
-
-            case 6:
-                return (
                     <div className="space-y-6 text-center">
-                        <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[#4285F4] to-[#EA4335] rounded-full flex items-center justify-center animate-pulse">
+                        <div className="w-24 h-24 mx-auto bg-linear-to-br from-[#4285F4] to-[#EA4335] rounded-full flex items-center justify-center animate-pulse">
                             <Trophy className="w-12 h-12 text-white" />
                         </div>
                         <h2 className="text-4xl font-black text-[#202124] dark:text-white">Enter the Arena</h2>
@@ -426,7 +365,7 @@ export default function PremiumOnboarding() {
                             You're all set. Time to prove yourself on the leaderboard. No excuses, no mercy.
                         </p>
 
-                        <div className="bg-gradient-to-br from-[#D2E3FC] to-[#CEEAD6] dark:from-blue-900/20 dark:to-emerald-900/20 rounded-2xl p-6 space-y-4">
+                        <div className="bg-linear-to-br from-[#D2E3FC] to-[#CEEAD6] dark:from-blue-900/20 dark:to-emerald-900/20 rounded-2xl p-6 space-y-4 text-left">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-[#5F6368] dark:text-gray-400">LeetCode</span>
                                 <span className="font-bold text-[#202124] dark:text-white">{formData.leetcodeUsername}</span>
@@ -435,38 +374,16 @@ export default function PremiumOnboarding() {
                                 <span className="text-sm text-[#5F6368] dark:text-gray-400">WhatsApp</span>
                                 <span className="font-bold text-[#202124] dark:text-white">{formData.countryCode} {formData.phoneNumber}</span>
                             </div>
-                            {formData.gfgUsername && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-[#5F6368] dark:text-gray-400">GFG Username</span>
-                                    <span className="font-bold text-[#202124] dark:text-white">{formData.gfgUsername}</span>
-                                </div>
-                            )}
-                            {formData.github && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-[#5F6368] dark:text-gray-400">GitHub</span>
-                                    <span className="font-bold text-[#202124] dark:text-white">{formData.github}</span>
-                                </div>
-                            )}
-                            {formData.linkedin && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-[#5F6368] dark:text-gray-400">LinkedIn</span>
-                                    <span className="font-bold text-[#202124] dark:text-white">{formData.linkedin}</span>
-                                </div>
-                            )}
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-[#5F6368] dark:text-gray-400">Roast Level</span>
                                 <span className="font-bold text-[#202124] dark:text-white capitalize">{formData.roastIntensity}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-[#5F6368] dark:text-gray-400">Daily Ping</span>
-                                <span className="font-bold text-[#202124] dark:text-white">{formData.dailyGrindTime}</span>
                             </div>
                         </div>
 
                         <button
                             onClick={completeOnboarding}
                             disabled={isSubmitting}
-                            className="w-full bg-gradient-to-r from-[#4285F4] to-[#EA4335] hover:opacity-90 text-white font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg shadow-[0_8px_16px_-4px_rgba(66,133,244,0.4)]"
+                            className="w-full bg-linear-to-r from-[#4285F4] to-[#EA4335] hover:opacity-90 text-white font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg shadow-[0_8px_16px_-4px_rgba(66,133,244,0.4)]"
                         >
                             {isSubmitting ? (
                                 <Loader2 className="w-6 h-6 animate-spin" />
@@ -516,11 +433,11 @@ export default function PremiumOnboarding() {
                     {renderStep()}
                 </motion.div>
 
-                {/* Skip Option (only on steps 2-4) */}
-                {step > 1 && step < 5 && (
+                {/* Skip Option (only on step 4) */}
+                {step === 4 && (
                     <div className="text-center mt-4">
                         <button
-                            onClick={() => setStep(step + 1)}
+                            onClick={() => setStep(5)}
                             className="text-sm text-gray-400 hover:text-white transition-colors"
                         >
                             Skip this step →

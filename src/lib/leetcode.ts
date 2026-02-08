@@ -1,8 +1,7 @@
 import { db } from '@/db/drizzle';
-import { dailyStats } from '@/db/schema';
-import { eq, and, lt, desc } from 'drizzle-orm';
-import { getTodayDate } from './utils';
-import type { LeetCodeStats, LeetCodeAPIError } from '@/types';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import type { LeetCodeStats, LeetCodeAPIError, LeetCodeSubmission } from '@/types';
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql';
 const MAX_RETRIES = 3;
@@ -93,13 +92,6 @@ interface LeetCodeGraphQLResponse {
     recentAcSubmissionList: LeetCodeSubmission[] | null;
   };
   errors?: Array<{ message: string }>;
-}
-
-export interface LeetCodeSubmission {
-  id: string;
-  title: string;
-  titleSlug: string;
-  timestamp: string;
 }
 
 async function fetchLeetCodeUserWithRetry(
@@ -230,7 +222,6 @@ async function fetchLeetCodeUserWithRetry(
 }
 
 export async function fetchLeetCodeStats(username: string): Promise<LeetCodeStats> {
-  // Use the retry-enabled fetch function
   const { matchedUser, recentSubmissions } = await fetchLeetCodeUserWithRetry(username);
 
   if (!matchedUser) {
@@ -257,18 +248,14 @@ export async function fetchLeetCodeStats(username: string): Promise<LeetCodeStat
   const total = acNum.find((s) => s.difficulty === 'All')?.count || 0;
   const ranking = matchedUser.profile?.ranking || 0;
 
-  // LeetCode's public API doesn't return avatars, so we construct the URL
   const avatarFromAPI = matchedUser.profile?.userAvatar;
   const avatar = avatarFromAPI || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=1a73e8&color=fff&size=128`;
 
   const country = matchedUser.profile?.countryName || '';
 
-
-  // Calculate streak from submission calendar
   const calendar = matchedUser.submissionCalendar;
   const streak = calculateStreak(calendar);
 
-  // Get last submission timestamp from calendar
   let lastSubmission: string | null = null;
   if (calendar) {
     try {
@@ -296,72 +283,75 @@ export async function fetchLeetCodeStats(username: string): Promise<LeetCodeStat
   };
 }
 
-export async function updateDailyStatsForUser(userId: number, leetcodeUsername: string) {
+export async function updateDailyStatsForUser(userId: string, leetcodeUsername: string) {
   const stats = await fetchLeetCodeStats(leetcodeUsername);
-  const today = getTodayDate();
 
-  // Find today's stat or the most recent one
-  const [todayStat] = await db.select()
-    .from(dailyStats)
-    .where(and(eq(dailyStats.userId, userId), eq(dailyStats.date, today)))
-    .limit(1);
+  // Fetch current user data to calculate points since last reset baseline
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) throw new Error("User not found");
 
-  // Get yesterday's or most recent stat to calculate points
-  const [lastStat] = await db.select()
-    .from(dailyStats)
-    .where(and(eq(dailyStats.userId, userId), lt(dailyStats.date, today)))
-    .orderBy(desc(dailyStats.date))
-    .limit(1);
+  // Get current date in Asia/Kolkata (IST) for consistent reset
+  const now = new Date();
+  const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
 
-  // Calculate today's points with weighted scoring
-  // Easy = 1 point, Medium = 3 points, Hard = 6 points
+  // Check if we need to reset baselines (first sync or date changed)
+  const isFirstSync = !user.lastResetDate;
+  const dateChanged = user.lastResetDate !== currentDate;
+
+  let baselineEasy = user.lastResetEasy ?? 0;
+  let baselineMedium = user.lastResetMedium ?? 0;
+  let baselineHard = user.lastResetHard ?? 0;
   let todayPoints = 0;
-  let previousTotal = 0;
 
-  if (lastStat) {
-    // Calculate points based on new problems solved since last stat
-    const newEasy = Math.max(0, stats.easy - (lastStat.easy ?? 0));
-    const newMedium = Math.max(0, stats.medium - (lastStat.medium ?? 0));
-    const newHard = Math.max(0, stats.hard - (lastStat.hard ?? 0));
-    todayPoints = newEasy * 1 + newMedium * 3 + newHard * 6;
-    previousTotal = lastStat.total ?? 0;
-  } else {
-    // First ever entry for this user, no points yet
-    previousTotal = stats.total;
+  if (isFirstSync || dateChanged) {
+    // If it's a new day or first sync, the baseline is what we have right now
+    // and today's points start from 0
+    baselineEasy = stats.easy;
+    baselineMedium = stats.medium;
+    baselineHard = stats.hard;
     todayPoints = 0;
-  }
-
-  // Ensure points are non-negative
-  todayPoints = Math.max(0, todayPoints);
-
-  const update = {
-    easy: stats.easy,
-    medium: stats.medium,
-    hard: stats.hard,
-    total: stats.total,
-    ranking: stats.ranking,
-    avatar: stats.avatar,
-    country: stats.country,
-    streak: stats.streak,
-    lastSubmission: stats.lastSubmission,
-    recentProblems: stats.recentSubmissions,
-    previousTotal: todayStat ? previousTotal : stats.total, // Keep original baseline
-    todayPoints,
-  };
-
-  if (todayStat) {
-    await db.update(dailyStats)
-      .set(update)
-      .where(and(eq(dailyStats.userId, userId), eq(dailyStats.date, today)));
-    return todayStat; // Or re-fetch if needed
   } else {
-    const [newStat] = await db.insert(dailyStats)
-      .values({
-        userId,
-        date: today,
-        ...update,
-      })
-      .returning();
-    return newStat;
+    // Calculate points based on problems solved since today's baseline
+    const newEasy = Math.max(0, stats.easy - baselineEasy);
+    const newMedium = Math.max(0, stats.medium - baselineMedium);
+    const newHard = Math.max(0, stats.hard - baselineHard);
+
+    // Points: Easy=1, Medium=3, Hard=6
+    todayPoints = newEasy * 1 + newMedium * 3 + newHard * 6;
   }
+
+  // Filter recent submissions to only keep last 72 hours
+  const seventyTwoHoursAgo = Math.floor(Date.now() / 1000) - (72 * 60 * 60);
+  const filteredSubmissions = (stats.recentSubmissions || []).filter(
+    (sub: any) => Number(sub.timestamp) >= seventyTwoHoursAgo
+  );
+
+  await db.update(users)
+    .set({
+      easySolved: stats.easy,
+      mediumSolved: stats.medium,
+      hardSolved: stats.hard,
+      totalSolved: stats.total,
+      ranking: stats.ranking,
+      avatar: stats.avatar,
+      country: stats.country,
+      streak: stats.streak,
+      lastSubmission: stats.lastSubmission,
+      recentProblems: filteredSubmissions,
+      todayPoints: Math.max(0, todayPoints),
+      lastStatUpdate: new Date(),
+      // Update baselines if date changed or first sync
+      ...((isFirstSync || dateChanged) && {
+        lastResetEasy: stats.easy,
+        lastResetMedium: stats.medium,
+        lastResetHard: stats.hard,
+        lastResetDate: currentDate,
+      }),
+    })
+    .where(eq(users.id, userId));
+
+  return {
+    todayPoints: Math.max(0, todayPoints),
+    total: stats.total
+  };
 }

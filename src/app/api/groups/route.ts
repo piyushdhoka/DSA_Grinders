@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, AuthUser } from '@/lib/auth';
 import { db } from '@/db/drizzle';
 import { groups, groupMembers, users } from '@/db/schema';
-import { eq, or, and, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 
 // Generate a random 6-character alphanumeric code
 function generateGroupCode(): string {
@@ -14,26 +14,51 @@ function generateGroupCode(): string {
     return code;
 }
 
-// GET: List groups for the current user
-export const GET = requireAuth(async (req: NextRequest, user: any) => {
+// GET: List all groups the current user is a member of (with member counts)
+export const GET = requireAuth(async (req: NextRequest, user: AuthUser) => {
     try {
-        // Fetch detailed group info for groups the user is in
+        // Fetch all groups the user is a member of via the join table
         const userGroups = await db.select({
             id: groups.id,
-            name: groups.name,
             code: groups.code,
+            name: groups.name,
             description: groups.description,
-            owner: groups.owner,
+            ownerId: groups.ownerId,
             createdAt: groups.createdAt,
             ownerName: users.name,
+            joinedAt: groupMembers.joinedAt,
         })
-            .from(groups)
-            .innerJoin(groupMembers, eq(groupMembers.groupId, groups.id))
-            .leftJoin(users, eq(groups.owner, users.id))
+            .from(groupMembers)
+            .innerJoin(groups, eq(groupMembers.groupId, groups.id))
+            .leftJoin(users, eq(groups.ownerId, users.id))
             .where(eq(groupMembers.userId, user.id))
-            .orderBy(desc(groups.createdAt));
+            .orderBy(desc(groupMembers.joinedAt));
 
-        return NextResponse.json({ groups: userGroups });
+        // Get member counts for each group
+        const groupIds = userGroups.map(g => g.id);
+
+        let memberCounts: Record<string, number> = {};
+        if (groupIds.length > 0) {
+            const counts = await db.select({
+                groupId: groupMembers.groupId,
+                count: sql<number>`count(*)::int`
+            })
+                .from(groupMembers)
+                .groupBy(groupMembers.groupId);
+
+            counts.forEach(c => {
+                memberCounts[c.groupId] = c.count;
+            });
+        }
+
+        // Merge member counts into response
+        const groupsWithCounts = userGroups.map(g => ({
+            ...g,
+            memberCount: memberCounts[g.id] || 0,
+            isOwner: g.ownerId === user.id,
+        }));
+
+        return NextResponse.json({ groups: groupsWithCounts });
     } catch (error: any) {
         console.error('Error fetching groups:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -41,7 +66,7 @@ export const GET = requireAuth(async (req: NextRequest, user: any) => {
 });
 
 // POST: Create a new group
-export const POST = requireAuth(async (req: NextRequest, user: any) => {
+export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
     try {
         const { name, description } = await req.json();
 
@@ -54,7 +79,6 @@ export const POST = requireAuth(async (req: NextRequest, user: any) => {
         let isUnique = false;
         let attempts = 0;
 
-        // Retry loop to ensure uniqueness
         while (!isUnique && attempts < 10) {
             const [existing] = await db.select().from(groups).where(eq(groups.code, code)).limit(1);
             if (!existing) {
@@ -69,26 +93,27 @@ export const POST = requireAuth(async (req: NextRequest, user: any) => {
             throw new Error('Failed to generate unique group code. Please try again.');
         }
 
-        // Create group and add owner as member in a transaction
-        const { group, member } = await db.transaction(async (tx) => {
+        // Create group and add creator as first member
+        const group = await db.transaction(async (tx) => {
             const [newGroup] = await tx.insert(groups).values({
                 name,
                 code,
                 description,
-                owner: user.id,
+                ownerId: user.id,
             }).returning();
 
-            const [newMember] = await tx.insert(groupMembers).values({
-                groupId: newGroup.id,
+            // Add creator to group_members join table
+            await tx.insert(groupMembers).values({
                 userId: user.id,
-            }).returning();
+                groupId: newGroup.id,
+            });
 
-            return { group: newGroup, member: newMember };
+            return newGroup;
         });
 
         return NextResponse.json({
-            group,
-            message: 'Group created successfully'
+            group: { ...group, memberCount: 1, isOwner: true },
+            message: 'Group created successfully. You have been added as a member.'
         });
 
     } catch (error: any) {
