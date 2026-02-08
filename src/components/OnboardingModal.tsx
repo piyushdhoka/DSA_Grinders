@@ -140,7 +140,7 @@ export default function OnboardingModal() {
                                         required
                                         value={formData.leetcodeUsername}
                                         onChange={(e) => setFormData({ ...formData, leetcodeUsername: e.target.value })}
-                                        placeholder="piyush_dhoka"
+                                        placeholder="leetcode_username"
                                         className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-900 font-medium"
                                     />
                                     {isValidatingLeetCode && (
@@ -160,7 +160,7 @@ export default function OnboardingModal() {
                                     required
                                     value={formData.github}
                                     onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                    placeholder="piyushdhoka"
+                                    placeholder="github_handle"
                                     className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-900 font-medium"
                                 />
                             </div>
@@ -175,7 +175,7 @@ export default function OnboardingModal() {
                                 required
                                 value={formData.linkedin}
                                 onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                placeholder="piyushdhoka27"
+                                placeholder="linkedin_id"
                                 className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white outline-none transition-all text-gray-900 font-medium"
                             />
                         </div>

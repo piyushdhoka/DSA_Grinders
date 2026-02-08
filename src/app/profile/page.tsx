@@ -225,7 +225,7 @@ export default function ProfilePage() {
                                                 onChange={(e) => setGfgUsername(e.target.value)}
                                                 disabled={isSaving}
                                                 className="h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all rounded-[1.25rem] text-base font-medium"
-                                                placeholder="e.g. piyushdhoka"
+                                                placeholder="e.g. gfg_username"
                                             />
                                         </div>
 
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                                                 required
                                                 disabled={isSaving}
                                                 className="h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all rounded-[1.25rem] text-base font-medium"
-                                                placeholder="e.g. piyushdhoka"
+                                                placeholder="e.g. github_handle"
                                             />
                                         </div>
 

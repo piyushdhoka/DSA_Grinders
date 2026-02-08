@@ -151,7 +151,7 @@ export default function PremiumOnboarding() {
                                 type="text"
                                 value={formData.leetcodeUsername}
                                 onChange={(e) => setFormData({ ...formData, leetcodeUsername: e.target.value })}
-                                placeholder="e.g. piyushdhoka"
+                                placeholder="e.g. leetcode_user"
                                 className="w-full px-6 py-4 bg-[#F1F3F4] dark:bg-gray-800 border-2 border-transparent focus:border-[#4285F4] rounded-2xl text-lg font-medium outline-none transition-all"
                                 onKeyDown={(e) => e.key === 'Enter' && validateLeetCode()}
                             />
@@ -308,7 +308,7 @@ export default function PremiumOnboarding() {
                                     type="text"
                                     value={formData.gfgUsername}
                                     onChange={(e) => setFormData({ ...formData, gfgUsername: e.target.value })}
-                                    placeholder="e.g. piyushdhoka"
+                                    placeholder="e.g. gfg_username"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#34A853] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
@@ -321,7 +321,7 @@ export default function PremiumOnboarding() {
                                     type="text"
                                     value={formData.github}
                                     onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                    placeholder="e.g. piyushdhoka"
+                                    placeholder="e.g. github_handle"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#4285F4] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
@@ -334,7 +334,7 @@ export default function PremiumOnboarding() {
                                     type="text"
                                     value={formData.linkedin}
                                     onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                                    placeholder="e.g. piyush-dhoka"
+                                    placeholder="e.g. linkedin_id"
                                     className="w-full px-4 py-3 rounded-xl border-2 border-[#E8EAED] dark:border-gray-700 focus:border-[#4285F4] outline-none transition-all bg-white dark:bg-gray-800 text-[#202124] dark:text-white"
                                 />
                             </div>
