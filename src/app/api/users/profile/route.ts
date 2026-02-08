@@ -35,7 +35,7 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { name, phoneNumber, github, linkedin, leetcodeUsername } = validation.data;
+    const { name, phoneNumber, github, linkedin, leetcodeUsername, gfgUsername } = validation.data;
 
     const updateData: UserUpdatePayload = {};
     if (name) updateData.name = name;
@@ -53,6 +53,7 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
     }
 
     if (leetcodeUsername) updateData.leetcodeUsername = leetcodeUsername;
+    if (gfgUsername !== undefined) updateData.gfgUsername = gfgUsername;
 
     if (phoneNumber !== undefined) {
       updateData.phoneNumber = phoneNumber ? phoneNumber.replace(/\s/g, '') : null;

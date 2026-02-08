@@ -18,8 +18,14 @@ import {
   Shield,
   LogOut,
   Clock,
-  LayoutDashboard
+  LayoutDashboard,
+  Settings as SettingsIcon,
+  Check,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
+
+
 
 export default function AdminPage() {
   const router = useRouter();
@@ -43,6 +49,10 @@ export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [showLogin, setShowLogin] = useState(false);
 
+  // Settings state
+  const [globalSettings, setGlobalSettings] = useState<any>(null);
+  const [isSettingsUpdating, setIsSettingsUpdating] = useState(false);
+
   // Use either manual token or Google Auth token
   const effectiveToken = adminToken || token;
   const isAdmin = (user?.role === 'admin') || !!adminToken;
@@ -63,6 +73,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin && effectiveToken) {
       fetchUsers();
+      fetchSettings();
     }
   }, [isAdmin, effectiveToken]);
 
@@ -114,6 +125,76 @@ export default function AdminPage() {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    if (!effectiveToken) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        headers: { Authorization: `Bearer ${effectiveToken}` }
+      });
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      const data = await res.json();
+      setGlobalSettings(data.settings);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateSettings = async () => {
+    if (!effectiveToken || !globalSettings) return;
+    setIsSettingsUpdating(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${effectiveToken}`
+        },
+        body: JSON.stringify(globalSettings),
+      });
+      if (!res.ok) throw new Error("Failed to update settings");
+      const data = await res.json();
+      setGlobalSettings(data.settings);
+      setSuccess("Global settings updated successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSettingsUpdating(false);
+    }
+  };
+
+  const handleSyncUser = async (userId: string) => {
+    if (!effectiveToken) return;
+    setSuccess("Syncing user stats...");
+
+    try {
+      const res = await fetch("/api/admin/users/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${effectiveToken}`
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+
+      setSuccess(`Synced stats for user! Today's points: ${data.data?.todayPoints ?? 'N/A'}`);
+      fetchUsers();
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(`Sync failed: ${err.message}`);
     }
   };
 
@@ -353,42 +434,128 @@ export default function AdminPage() {
                   <div
                     key={u.id}
                     onClick={() => toggleUserSelection(u.id)}
-                    className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${selectedUsers.includes(u.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}
+                    className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${selectedUsers.includes(u.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'} group`}
                   >
                     <div className="w-4 h-4 rounded border flex items-center justify-center">
                       {selectedUsers.includes(u.id) && <div className="w-2 h-2 bg-blue-600 rounded-sm" />}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold truncate">{u.name}</p>
                       <p className="text-xs text-gray-500 truncate">@{u.leetcodeUsername}</p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSyncUser(u.id);
+                      }}
+                      title="Force Sync Stats"
+                    >
+                      <RefreshCw className="h-3 w-3 text-blue-500" />
+                    </Button>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm text-center">
-              <Zap className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">Automated Alerts</h3>
-              <p className="text-gray-500 mb-6 font-medium">Reset baselines and trigger per-user notifications based on their selected daily grind time.</p>
-              <Button onClick={triggerCronJob} disabled={isSending} variant="outline" className="w-full h-14 rounded-2xl border-2 font-bold">
-                {isSending ? <Loader2 className="animate-spin" /> : 'Force Run Cron Job'}
-              </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm text-center">
+                <Zap className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">Automated Alerts</h3>
+                <p className="text-gray-500 mb-6 font-medium">Reset baselines and trigger per-user notifications based on their selected daily grind time.</p>
+                <Button onClick={triggerCronJob} disabled={isSending} variant="outline" className="w-full h-14 rounded-2xl border-2 font-bold">
+                  {isSending ? <Loader2 className="animate-spin" /> : 'Force Run Cron Job'}
+                </Button>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <SettingsIcon className="w-5 h-5 text-blue-600" />
+                  System Thresholds
+                </h3>
+                {globalSettings ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-gray-400">Max Emails / Day</Label>
+                        <Input
+                          type="number"
+                          value={globalSettings.maxDailyEmails}
+                          onChange={e => setGlobalSettings({ ...globalSettings, maxDailyEmails: parseInt(e.target.value) })}
+                          className="h-12 rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-gray-400">Max WhatsApp / Day</Label>
+                        <Input
+                          type="number"
+                          value={globalSettings.maxDailyWhatsapp}
+                          onChange={e => setGlobalSettings({ ...globalSettings, maxDailyWhatsapp: parseInt(e.target.value) })}
+                          className="h-12 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100 flex flex-col gap-4">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <div>
+                          <p className="text-sm font-bold">Automation Master Switch</p>
+                          <p className="text-[10px] text-gray-400">Enable or disable all automated tasks</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="w-5 h-5 accent-blue-600"
+                          checked={globalSettings.automationEnabled}
+                          onChange={e => setGlobalSettings({ ...globalSettings, automationEnabled: e.target.checked })}
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full h-12 rounded-xl font-bold bg-gray-900 hover:bg-black"
+                      onClick={updateSettings}
+                      disabled={isSettingsUpdating}
+                    >
+                      {isSettingsUpdating ? <Loader2 className="animate-spin" /> : "Save System Settings"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="animate-spin text-gray-300" />
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm text-center">
-              <Users className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">User Stats</h3>
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="p-4 bg-gray-50 rounded-2xl">
-                  <p className="text-2xl font-black">{users.length}</p>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Total</p>
+            <div className="space-y-6">
+              <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm text-center">
+                <Users className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">User Stats</h3>
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="p-4 bg-gray-50 rounded-2xl">
+                    <p className="text-2xl font-black">{users.length}</p>
+                    <p className="text-xs text-gray-400 uppercase font-bold">Total</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-2xl">
+                    <p className="text-2xl font-black">{users.filter(u => u.phoneNumber).length}</p>
+                    <p className="text-xs text-gray-400 uppercase font-bold">WhatsApp</p>
+                  </div>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-2xl">
-                  <p className="text-2xl font-black">{users.filter(u => u.phoneNumber).length}</p>
-                  <p className="text-xs text-gray-400 uppercase font-bold">WhatsApp</p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl">
+                <div className="flex gap-3 text-amber-800">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold">Maintenance Mode</p>
+                    <p className="text-xs font-medium opacity-80 mt-1">
+                      System thresholds are checked by the cron job before sending any broadcast messages to prevent API abuse or excessive costs.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

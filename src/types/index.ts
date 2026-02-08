@@ -18,7 +18,6 @@ export interface AuthenticatedUser {
     onboardingCompleted: boolean;
     groupMemberOf?: string | null;
     isProfileIncomplete: boolean;
-    dailyGrindTime?: string | null;
 }
 
 export interface PublicUserProfile {
@@ -139,7 +138,6 @@ export interface ProfileUpdateRequest {
     github?: string;
     linkedin?: string | null;
     leetcodeUsername?: string;
-    dailyGrindTime?: string | null;
 }
 
 export interface ProfileUpdateResponse {

@@ -1,9 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/db/drizzle';
 import { users } from '@/db/schema';
-import { desc, ne, notLike } from 'drizzle-orm';
+import { ne, notLike } from 'drizzle-orm';
 import { getRateLimitHeaders, checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rateLimit';
 import { updateDailyStatsForUser } from '@/lib/leetcode';
+
+// Simple in-memory cache
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+// Separate caches for 'daily' and 'all_time'
+const cache: Record<string, CacheEntry> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function GET(request: NextRequest) {
   const clientId = getClientIdentifier(request);
@@ -25,6 +35,20 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = new URL(request.url).searchParams;
     const type = searchParams.get('type') || 'daily';
+    const cacheKey = `leaderboard_${type}`;
+
+    // Check cache
+    const cached = cache[cacheKey];
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      return new NextResponse(JSON.stringify(cached.data), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cache': 'HIT',
+          ...getRateLimitHeaders(rateLimitResult),
+        },
+      });
+    }
 
     // Fetch all users with their current stats from the users table
     const allUsers = await db.select({
@@ -71,19 +95,12 @@ export async function GET(request: NextRequest) {
       })
       .slice(0, 3); // Small batch to keep response snappy
 
-    // Trigger background refreshes (don't await them to keep response instant)
-    // Note: On Vercel, these might be cut off unless using waitUntil, 
-    // but in a high-traffic app, they will eventually complete across multiple requests.
-    const refreshPromises = staleUsers.map(u =>
+    // Trigger background refreshes
+    staleUsers.forEach(u =>
       updateDailyStatsForUser(u.id, u.leetcodeUsername).catch(err =>
         console.error(`SWR Background Refresh failed for ${u.leetcodeUsername}:`, err)
       )
     );
-
-    // If we have very few users or extreme staleness, we might want to await 1-2 to ensure 
-    // SOME fresh data, but for ultimate speed we return immediately.
-    // To be safe and ensure the DB actually gets updated even in serverless, 
-    // we'll fire and not wait.
 
     // Filter out pending users and transform
     const leaderboardData = allUsers
@@ -136,13 +153,22 @@ export async function GET(request: NextRequest) {
     activities.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
     activities = activities.slice(0, 50);
 
-    return new NextResponse(JSON.stringify({
+    const responseData = {
       entries: leaderboardData,
       activities
-    }), {
+    };
+
+    // Update cache
+    cache[cacheKey] = {
+      data: responseData,
+      timestamp: Date.now()
+    };
+
+    return new NextResponse(JSON.stringify(responseData), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
+        'X-Cache': 'MISS',
         ...getRateLimitHeaders(rateLimitResult),
       },
     });

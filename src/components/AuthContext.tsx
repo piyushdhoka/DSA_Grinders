@@ -17,7 +17,6 @@ interface User {
     isProfileIncomplete?: boolean;
     onboardingCompleted?: boolean;
     roastIntensity?: 'mild' | 'medium' | 'savage';
-    dailyGrindTime?: string;
 }
 
 interface AuthContextType {
@@ -105,10 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signInWithGoogle = async (forceAccountSelection = false) => {
         // Use the current origin for development, fallback to env variable for production
-        const redirectUrl = typeof window !== 'undefined' 
+        const redirectUrl = typeof window !== 'undefined'
             ? `${window.location.origin}/auth/callback`
             : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
-            
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {

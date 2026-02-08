@@ -2,6 +2,7 @@ import { db } from '@/db/drizzle';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { LeetCodeStats, LeetCodeAPIError, LeetCodeSubmission } from '@/types';
+import { updateDailyStatsForUserGFG } from './gfg';
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql';
 const MAX_RETRIES = 3;
@@ -290,6 +291,23 @@ export async function updateDailyStatsForUser(userId: string, leetcodeUsername: 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) throw new Error("User not found");
 
+  // Also sync GFG stats if username exists
+  let gfgPoints = 0;
+  let gfgTotal = 0;
+  let gfgScore = 0;
+  if (user.gfgUsername) {
+    try {
+      const gfgRes = await updateDailyStatsForUserGFG(userId, user.gfgUsername);
+      if (gfgRes) {
+        gfgPoints = gfgRes.todayPoints;
+        gfgTotal = gfgRes.total;
+        gfgScore = gfgRes.score;
+      }
+    } catch (error) {
+      console.error(`Failed to sync GFG stats for ${user.gfgUsername}:`, error);
+    }
+  }
+
   // Get current date in Asia/Kolkata (IST) for consistent reset
   const now = new Date();
   const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
@@ -338,7 +356,9 @@ export async function updateDailyStatsForUser(userId: string, leetcodeUsername: 
       streak: stats.streak,
       lastSubmission: stats.lastSubmission,
       recentProblems: filteredSubmissions,
-      todayPoints: Math.max(0, todayPoints),
+      todayPoints: Math.max(0, todayPoints + gfgPoints),
+      gfgSolved: gfgTotal || user.gfgSolved,
+      gfgScore: gfgScore || user.gfgScore,
       lastStatUpdate: new Date(),
       // Update baselines if date changed or first sync
       ...((isFirstSync || dateChanged) && {
@@ -351,7 +371,7 @@ export async function updateDailyStatsForUser(userId: string, leetcodeUsername: 
     .where(eq(users.id, userId));
 
   return {
-    todayPoints: Math.max(0, todayPoints),
-    total: stats.total
+    todayPoints: Math.max(0, todayPoints + gfgPoints),
+    total: stats.total + gfgTotal
   };
 }

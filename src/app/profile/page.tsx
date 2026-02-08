@@ -64,7 +64,7 @@ export default function ProfilePage() {
                     phoneNumber: phoneNumber.trim() || null,
                     github: github.trim(),
                     linkedin: linkedin.trim() || null,
-                    gfgUsername: gfgUsername.trim() || null
+                    gfgUsername: gfgUsername.trim() || null,
                 }),
             });
 
@@ -258,6 +258,8 @@ export default function ProfilePage() {
                                                 onChange={(e) => setLinkedin(e.target.value)}
                                                 required
                                                 disabled={isSaving}
+                                                className="h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all rounded-[1.25rem] text-base font-medium"
+                                                placeholder="e.g. linkedin_handle"
                                             />
                                         </div>
 
@@ -277,6 +279,7 @@ export default function ProfilePage() {
                                                 placeholder="+91..."
                                             />
                                         </div>
+
                                     </div>
                                 </div>
 
@@ -305,7 +308,7 @@ export default function ProfilePage() {
                     {/* Right Column: Platform Status */}
                     <div className="space-y-6">
                         {/* LeetCode Status */}
-                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl md:rounded-4xl p-6 md:p-8 text-white shadow-xl shadow-orange-200/50 relative overflow-hidden group">
+                        <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-3xl md:rounded-4xl p-6 md:p-8 text-white shadow-xl shadow-orange-200/50 relative overflow-hidden group">
                             <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                                 <span className="bg-white/20 p-2 rounded-xl">⚡</span>

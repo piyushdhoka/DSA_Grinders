@@ -137,7 +137,7 @@ export default function PremiumOnboarding() {
                 return (
                     <div className="space-y-6">
                         <div className="text-center space-y-3">
-                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#4285F4] to-[#174EA6] rounded-3xl flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto bg-linear-to-br from-[#4285F4] to-[#174EA6] rounded-3xl flex items-center justify-center">
                                 <Code2 className="w-10 h-10 text-white" />
                             </div>
                             <h2 className="text-3xl font-black text-[#202124] dark:text-white">Connect LeetCode</h2>
@@ -198,7 +198,7 @@ export default function PremiumOnboarding() {
                 return (
                     <div className="space-y-6">
                         <div className="text-center space-y-3">
-                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#34A853] to-[#0D652D] rounded-3xl flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto bg-linear-to-br from-[#34A853] to-[#0D652D] rounded-3xl flex items-center justify-center">
                                 <Bell className="w-10 h-10 text-white" />
                             </div>
                             <h2 className="text-3xl font-black text-[#202124] dark:text-white">WhatsApp Accountability</h2>
@@ -242,7 +242,7 @@ export default function PremiumOnboarding() {
                 return (
                     <div className="space-y-6">
                         <div className="text-center space-y-3">
-                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#EA4335] to-[#A50E0E] rounded-3xl flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto bg-linear-to-br from-[#EA4335] to-[#A50E0E] rounded-3xl flex items-center justify-center">
                                 <Flame className="w-10 h-10 text-white" />
                             </div>
                             <h2 className="text-3xl font-black text-[#202124] dark:text-white">Choose Your Pain</h2>
@@ -290,7 +290,7 @@ export default function PremiumOnboarding() {
                 return (
                     <div className="space-y-6">
                         <div className="text-center space-y-3">
-                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#5F6368] to-[#202124] rounded-3xl flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto bg-linear-to-br from-[#5F6368] to-[#202124] rounded-3xl flex items-center justify-center">
                                 <Target className="w-10 h-10 text-white" />
                             </div>
                             <h2 className="text-3xl font-black text-[#202124] dark:text-white">Coding Profiles</h2>
@@ -404,7 +404,7 @@ export default function PremiumOnboarding() {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-xl">
             <div className="w-full max-w-2xl mx-4">
                 {/* Progress Bar */}
                 <div className="mb-6">
@@ -414,7 +414,7 @@ export default function PremiumOnboarding() {
                     </div>
                     <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                         <motion.div
-                            className="h-full bg-gradient-to-r from-[#4285F4] to-[#34A853]"
+                            className="h-full bg-linear-to-r from-[#4285F4] to-[#34A853]"
                             initial={{ width: 0 }}
                             animate={{ width: `${(step / totalSteps) * 100}%` }}
                             transition={{ duration: 0.5 }}

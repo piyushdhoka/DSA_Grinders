@@ -26,6 +26,7 @@ export const POST = requireAuth(async (req: NextRequest, user: any) => {
         if (github !== undefined) updateData.github = github || 'pending';
         if (linkedin !== undefined) updateData.linkedin = linkedin || null;
         if (gfgUsername !== undefined) updateData.gfgUsername = gfgUsername || null;
+        if (roastIntensity !== undefined) updateData.roastIntensity = roastIntensity || 'medium';
 
         // Update user with onboarding data
         const [updatedUser] = await db
