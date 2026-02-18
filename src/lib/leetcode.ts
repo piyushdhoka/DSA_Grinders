@@ -1,8 +1,9 @@
 import { db } from '@/db/drizzle';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, dailyStats } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import type { LeetCodeStats, LeetCodeAPIError, LeetCodeSubmission } from '@/types';
 import { updateDailyStatsForUserGFG } from './gfg';
+import { getTodayDate } from './utils';
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql';
 const MAX_RETRIES = 3;
@@ -284,12 +285,14 @@ export async function fetchLeetCodeStats(username: string): Promise<LeetCodeStat
   };
 }
 
-export async function updateDailyStatsForUser(userId: string, leetcodeUsername: string) {
+export async function updateDailyStatsForUser(userId: number, leetcodeUsername: string) {
   const stats = await fetchLeetCodeStats(leetcodeUsername);
 
-  // Fetch current user data to calculate points since last reset baseline
+  // Fetch current user data for GFG username
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) throw new Error("User not found");
+
+  const today = getTodayDate();
 
   // Also sync GFG stats if username exists
   let gfgPoints = 0;
@@ -308,35 +311,23 @@ export async function updateDailyStatsForUser(userId: string, leetcodeUsername: 
     }
   }
 
-  // Get current date in Asia/Kolkata (IST) for consistent reset
-  const now = new Date();
-  const currentDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+  // Check if we already have a daily_stats row for today
+  const [existingStat] = await db.select().from(dailyStats)
+    .where(and(
+      eq(dailyStats.userId, userId),
+      eq(dailyStats.date, today),
+      eq(dailyStats.platform, 'leetcode')
+    ))
+    .limit(1);
 
-  // Check if we need to reset baselines (first sync or date changed)
-  const isFirstSync = !user.lastResetDate;
-  const dateChanged = user.lastResetDate !== currentDate;
-
-  let baselineEasy = user.lastResetEasy ?? 0;
-  let baselineMedium = user.lastResetMedium ?? 0;
-  let baselineHard = user.lastResetHard ?? 0;
-  let todayPoints = 0;
-
-  if (isFirstSync || dateChanged) {
-    // If it's a new day or first sync, the baseline is what we have right now
-    // and today's points start from 0
-    baselineEasy = stats.easy;
-    baselineMedium = stats.medium;
-    baselineHard = stats.hard;
-    todayPoints = 0;
-  } else {
-    // Calculate points based on problems solved since today's baseline
-    const newEasy = Math.max(0, stats.easy - baselineEasy);
-    const newMedium = Math.max(0, stats.medium - baselineMedium);
-    const newHard = Math.max(0, stats.hard - baselineHard);
-
-    // Points: Easy=1, Medium=3, Hard=6
-    todayPoints = newEasy * 1 + newMedium * 3 + newHard * 6;
-  }
+  // Calculate today's points based on previous baseline
+  const previousTotal = existingStat?.previousTotal ?? stats.total;
+  const newSolved = Math.max(0, stats.total - previousTotal);
+  // Simple point calculation: each new problem = points based on difficulty mix
+  const easyDiff = Math.max(0, stats.easy - (existingStat?.easy ?? stats.easy));
+  const medDiff = Math.max(0, stats.medium - (existingStat?.medium ?? stats.medium));
+  const hardDiff = Math.max(0, stats.hard - (existingStat?.hard ?? stats.hard));
+  const todayPoints = easyDiff * 1 + medDiff * 3 + hardDiff * 6 + gfgPoints;
 
   // Filter recent submissions to only keep last 72 hours
   const seventyTwoHoursAgo = Math.floor(Date.now() / 1000) - (72 * 60 * 60);
@@ -344,34 +335,46 @@ export async function updateDailyStatsForUser(userId: string, leetcodeUsername: 
     (sub: any) => Number(sub.timestamp) >= seventyTwoHoursAgo
   );
 
-  await db.update(users)
-    .set({
-      easySolved: stats.easy,
-      mediumSolved: stats.medium,
-      hardSolved: stats.hard,
-      totalSolved: stats.total,
+  if (existingStat) {
+    // Update existing row — keep previousTotal as baseline, update current stats
+    await db.update(dailyStats)
+      .set({
+        easy: stats.easy,
+        medium: stats.medium,
+        hard: stats.hard,
+        total: stats.total,
+        ranking: stats.ranking,
+        avatar: stats.avatar,
+        country: stats.country,
+        streak: stats.streak,
+        lastSubmission: stats.lastSubmission,
+        recentProblems: filteredSubmissions,
+        todayPoints: Math.max(0, todayPoints),
+      })
+      .where(eq(dailyStats.id, existingStat.id));
+  } else {
+    // Insert new row for today — previousTotal = current stats (baseline)
+    await db.insert(dailyStats).values({
+      userId,
+      date: today,
+      platform: 'leetcode',
+      easy: stats.easy,
+      medium: stats.medium,
+      hard: stats.hard,
+      total: stats.total,
       ranking: stats.ranking,
       avatar: stats.avatar,
       country: stats.country,
       streak: stats.streak,
       lastSubmission: stats.lastSubmission,
       recentProblems: filteredSubmissions,
-      todayPoints: Math.max(0, todayPoints + gfgPoints),
-      gfgSolved: gfgTotal || user.gfgSolved,
-      gfgScore: gfgScore || user.gfgScore,
-      lastStatUpdate: new Date(),
-      // Update baselines if date changed or first sync
-      ...((isFirstSync || dateChanged) && {
-        lastResetEasy: stats.easy,
-        lastResetMedium: stats.medium,
-        lastResetHard: stats.hard,
-        lastResetDate: currentDate,
-      }),
-    })
-    .where(eq(users.id, userId));
+      previousTotal: stats.total,
+      todayPoints: 0, // First sync of the day = baseline, 0 points
+    });
+  }
 
   return {
-    todayPoints: Math.max(0, todayPoints + gfgPoints),
+    todayPoints: Math.max(0, todayPoints),
     total: stats.total + gfgTotal
   };
 }

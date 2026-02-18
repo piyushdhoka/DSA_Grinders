@@ -23,16 +23,15 @@ export const GET = requireAuth(async (req: NextRequest, user: AuthUser) => {
             code: groups.code,
             name: groups.name,
             description: groups.description,
-            ownerId: groups.ownerId,
+            owner: groups.owner,
             createdAt: groups.createdAt,
             ownerName: users.name,
-            joinedAt: groupMembers.joinedAt,
         })
             .from(groupMembers)
             .innerJoin(groups, eq(groupMembers.groupId, groups.id))
-            .leftJoin(users, eq(groups.ownerId, users.id))
-            .where(eq(groupMembers.userId, user.id))
-            .orderBy(desc(groupMembers.joinedAt));
+            .leftJoin(users, eq(groups.owner, users.id))
+            .where(eq(groupMembers.userId, Number(user.id)))
+            .orderBy(desc(groups.createdAt));
 
         // Get member counts for each group
         const groupIds = userGroups.map(g => g.id);
@@ -55,7 +54,7 @@ export const GET = requireAuth(async (req: NextRequest, user: AuthUser) => {
         const groupsWithCounts = userGroups.map(g => ({
             ...g,
             memberCount: memberCounts[g.id] || 0,
-            isOwner: g.ownerId === user.id,
+            isOwner: g.owner === user.id,
         }));
 
         return NextResponse.json({ groups: groupsWithCounts });
@@ -99,12 +98,12 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
                 name,
                 code,
                 description,
-                ownerId: user.id,
+                owner: user.id as number,
             }).returning();
 
             // Add creator to group_members join table
             await tx.insert(groupMembers).values({
-                userId: user.id,
+                userId: Number(user.id),
                 groupId: newGroup.id,
             });
 

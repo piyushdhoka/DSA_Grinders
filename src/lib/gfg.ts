@@ -470,7 +470,7 @@ export async function fetchGFGStats(username: string): Promise<GFGStats> {
   return fetchGFGUserWithRetry(username);
 }
 
-export async function updateDailyStatsForUserGFG(userId: string, gfgUsername: string) {
+export async function updateDailyStatsForUserGFG(userId: number, gfgUsername: string) {
   const stats = await fetchGFGStats(gfgUsername);
   const today = getTodayDate();
 

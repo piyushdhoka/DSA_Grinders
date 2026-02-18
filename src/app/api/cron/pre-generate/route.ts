@@ -43,9 +43,9 @@ export async function GET(req: Request) {
 
     // Generate messages for all 3 intensities
     const intensities = [
-      { key: 'mild', name: 'Mild', prompt: 'Generate a gentle, encouraging reminder for coding practice. Keep it friendly and supportive.' },
-      { key: 'medium', name: 'Medium', prompt: 'Generate a moderately firm reminder with light teasing. Be motivational but with some humor.' },
-      { key: 'savage', name: 'Savage', prompt: 'Generate a brutally honest, no-mercy roast for someone who\'s slacking on coding. Be savage but not offensive.' }
+      { key: 'mild', name: 'Mild' },
+      { key: 'medium', name: 'Medium' },
+      { key: 'savage', name: 'Savage' }
     ];
 
     const generatedMessages: any = {};
@@ -57,26 +57,25 @@ export async function GET(req: Request) {
         
         // Generate content for this intensity
         const contentResult: DynamicContent | null = await generateDynamicRoast(
-          'Coder', // Generic name, will be replaced with [NAME] placeholder
-          intensity.prompt
+          'Coder' // Generic name, will be replaced with [NAME] placeholder
         );
 
         if (contentResult) {
           generatedMessages[intensity.key] = {
             fullMessage: contentResult.fullMessage,
             dashboardRoast: contentResult.dashboardRoast,
-            subject: contentResult.subject || `Time to Code, [NAME]! 💻`,
+            subject: `Time to Code, [NAME]! 💻`,
             generatedAt: new Date().toISOString()
           };
-          console.log(`✅ Generated ${intensity.name} message`);
+          console.log(`Generated ${intensity.name} message`);
         } else {
           errors.push(`Failed to generate ${intensity.name} message`);
-          console.error(`❌ Failed to generate ${intensity.name} message`);
+          console.error(`Failed to generate ${intensity.name} message`);
         }
       } catch (error) {
         const errorMsg = `Error generating ${intensity.name}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errorMsg);
-        console.error(`❌ ${errorMsg}`);
+        console.error(errorMsg);
       }
     }
 

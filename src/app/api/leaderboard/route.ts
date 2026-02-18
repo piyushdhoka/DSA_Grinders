@@ -1,9 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/db/drizzle';
-import { users } from '@/db/schema';
-import { ne, notLike } from 'drizzle-orm';
+import { users, dailyStats } from '@/db/schema';
+import { ne, notLike, eq, and, desc } from 'drizzle-orm';
 import { getRateLimitHeaders, checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rateLimit';
 import { updateDailyStatsForUser } from '@/lib/leetcode';
+import { getTodayDate } from '@/lib/utils';
 
 // Simple in-memory cache
 interface CacheEntry {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch all users with their current stats from the users table
+    // Fetch all non-admin users
     const allUsers = await db.select({
       id: users.id,
       name: users.name,
@@ -59,43 +60,50 @@ export async function GET(request: NextRequest) {
       gfgUsername: users.gfgUsername,
       github: users.github,
       linkedin: users.linkedin,
-      todayPoints: users.todayPoints,
-      easy: users.easySolved,
-      medium: users.mediumSolved,
-      hard: users.hardSolved,
-      totalProblems: users.totalSolved,
-      gfgSolved: users.gfgSolved,
-      gfgScore: users.gfgScore,
-      ranking: users.ranking,
-      avatar: users.avatar,
-      country: users.country,
-      streak: users.streak,
-      lastSubmission: users.lastSubmission,
-      recentProblems: users.recentProblems,
-      lastUpdated: users.lastStatUpdate,
     })
       .from(users)
       .where(ne(users.role, 'admin'));
 
-    // SWR Pattern: Identify stale users (older than 1 hour) to refresh in background
-    const STALE_THRESHOLD = 3600 * 1000; // 1 hour
-    const nowTs = Date.now();
+    const today = getTodayDate();
 
+    // Fetch today's daily stats for all users (leetcode)
+    const todayStats = await db.select().from(dailyStats)
+      .where(and(
+        eq(dailyStats.date, today),
+        eq(dailyStats.platform, 'leetcode')
+      ));
+
+    // If no stats for today, fetch the most recent stats per user
+    const latestStats = todayStats.length > 0 ? todayStats :
+      await db.select().from(dailyStats)
+        .where(eq(dailyStats.platform, 'leetcode'))
+        .orderBy(desc(dailyStats.date));
+
+    // Create a map of userId -> stats (most recent per user)
+    const statsMap = new Map<number, typeof latestStats[number]>();
+    for (const stat of latestStats) {
+      if (!statsMap.has(stat.userId)) {
+        statsMap.set(stat.userId, stat);
+      }
+    }
+
+    // Fetch GFG stats for today
+    const gfgStats = await db.select().from(dailyStats)
+      .where(and(
+        eq(dailyStats.date, today),
+        eq(dailyStats.platform, 'gfg')
+      ));
+    const gfgMap = new Map<number, typeof gfgStats[number]>();
+    for (const stat of gfgStats) {
+      gfgMap.set(stat.userId, stat);
+    }
+
+    // SWR Pattern: Identify stale users to refresh in background
     const staleUsers = allUsers
       .filter(u => !u.leetcodeUsername.startsWith('pending_'))
-      .filter(u => {
-        if (!u.lastUpdated) return true;
-        return (nowTs - new Date(u.lastUpdated).getTime()) > STALE_THRESHOLD;
-      })
-      .sort((a, b) => {
-        // Refresh most stale users first (null lastUpdated comes first)
-        const timeA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
-        const timeB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
-        return timeA - timeB;
-      })
-      .slice(0, 3); // Small batch to keep response snappy
+      .filter(u => !statsMap.has(u.id))
+      .slice(0, 3);
 
-    // Trigger background refreshes
     staleUsers.forEach(u =>
       updateDailyStatsForUser(u.id, u.leetcodeUsername).catch(err =>
         console.error(`SWR Background Refresh failed for ${u.leetcodeUsername}:`, err)
@@ -106,13 +114,35 @@ export async function GET(request: NextRequest) {
     const leaderboardData = allUsers
       .filter(u => !u.leetcodeUsername.startsWith('pending_'))
       .map(u => {
-        const easy = u.easy || 0;
-        const medium = u.medium || 0;
-        const hard = u.hard || 0;
+        const stat = statsMap.get(u.id);
+        const gfg = gfgMap.get(u.id);
+        const easy = stat?.easy || 0;
+        const medium = stat?.medium || 0;
+        const hard = stat?.hard || 0;
         const totalScore = easy * 1 + medium * 3 + hard * 6;
 
         return {
-          ...u,
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          leetcodeUsername: u.leetcodeUsername,
+          gfgUsername: u.gfgUsername,
+          github: u.github,
+          linkedin: u.linkedin,
+          todayPoints: (stat?.todayPoints || 0) + (gfg?.todayPoints || 0),
+          easy,
+          medium,
+          hard,
+          totalProblems: stat?.total || 0,
+          gfgSolved: gfg?.total || 0,
+          gfgScore: gfg?.todayPoints || 0,
+          ranking: stat?.ranking || 0,
+          avatar: stat?.avatar || '',
+          country: stat?.country || '',
+          streak: stat?.streak || 0,
+          lastSubmission: stat?.lastSubmission || null,
+          recentProblems: stat?.recentProblems || [],
+          lastUpdated: stat?.date || null,
           totalScore,
           rank: 0,
         };

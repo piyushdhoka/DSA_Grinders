@@ -15,8 +15,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Update stats for the current regular user
-        // user.id is now a UUID string
-        const regularUser = user as { id: string; leetcodeUsername: string };
+        const regularUser = user as { id: number; leetcodeUsername: string };
         const stat = await updateDailyStatsForUser(regularUser.id, regularUser.leetcodeUsername);
 
         return NextResponse.json({

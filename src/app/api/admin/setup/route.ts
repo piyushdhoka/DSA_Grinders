@@ -22,7 +22,7 @@ export const GET = requireAuth(async (req, user) => {
     // Update user role to admin
     const [updatedUser] = await db.update(users)
       .set({ role: 'admin' })
-      .where(eq(users.id, user.id))
+      .where(eq(users.id, Number(user.id)))
       .returning();
 
     if (!updatedUser) {

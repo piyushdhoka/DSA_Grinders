@@ -46,7 +46,7 @@ export const POST = requireAuth(async (req: NextRequest, user: any) => {
         const [updatedUser] = await db
             .update(users)
             .set(updateData)
-            .where(eq(users.id, user.id))
+            .where(eq(users.id, Number(user.id)))
             .returning();
 
         if (!updatedUser) {
