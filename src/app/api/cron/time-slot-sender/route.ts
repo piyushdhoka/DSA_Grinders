@@ -7,4 +7,302 @@ import { sendConfigEmail, sendConfigWhatsApp } from '@/lib/messaging';
 import { updateDailyStatsForUser } from '@/lib/leetcode';
 
 /**
- * TIME-SLOT SENDER CRON JOB  \n * Runs every 30 minutes to send messages to users whose dailyGrindTime falls in current slot\n * Groups users by roast intensity for efficient batch sending\n */\n\n// Helper function to check if a user's dailyGrindTime falls in current 30-minute slot\nfunction isInCurrentTimeSlot(userTime: string | null): boolean {\n  if (!userTime || !userTime.match(/^\\d{2}:\\d{2}$/)) return false;\n  \n  const now = new Date();\n  const currentHour = now.getHours();\n  const currentMinute = now.getMinutes();\n  \n  // Create 30-minute time slots: 00:00-00:30, 00:30-01:00, etc.\n  const slotStart = currentMinute < 30 ? 0 : 30;\n  const slotEnd = slotStart + 30;\n  \n  const [userHour, userMin] = userTime.split(':').map(Number);\n  \n  // Check if user's time falls in current slot\n  return userHour === currentHour && userMin >= slotStart && userMin < slotEnd;\n}\n\n// Helper function to process users in batches with concurrent sending\nasync function processUsersByIntensity(\n  users: any[], \n  intensity: string, \n  message: any,\n  shouldSendEmails: boolean,\n  shouldSendWhatsApp: boolean\n): Promise<any> {\n  const BATCH_SIZE = 10; // Send 10 emails/WhatsApp concurrently\n  \n  const results = {\n    processed: 0,\n    emailsSent: 0,\n    whatsappSent: 0,\n    errors: [] as string[]\n  };\n\n  console.log(`\\n📧 Processing ${users.length} users with ${intensity} intensity...`);\n  \n  for (let i = 0; i < users.length; i += BATCH_SIZE) {\n    const batch = users.slice(i, i + BATCH_SIZE);\n    console.log(`Processing batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(users.length/BATCH_SIZE)} (${batch.length} users)`);\n    \n    // Process all users in batch concurrently\n    const batchPromises = batch.map(async (user) => {\n      try {\n        // Personalize message with user's name\n        const personalizedMessage = message.fullMessage?.replace(/\\[NAME\\]/g, user.name.split(' ')[0]);\n        const personalizedSubject = message.subject?.replace(/\\[NAME\\]/g, user.name.split(' ')[0]);\n        \n        const userResults = {\n          email: { success: false, skipped: true },\n          whatsapp: { success: false, skipped: true },\n          statsUpdate: { success: false }\n        };\n\n        // Update stats (non-blocking)\n        try {\n          await updateDailyStatsForUser(user.id, user.leetcodeUsername);\n          userResults.statsUpdate = { success: true };\n        } catch (error) {\n          console.error(`Stats update failed for ${user.email}:`, error);\n        }\n\n        // Send email if enabled\n        if (shouldSendEmails) {\n          try {\n            const emailResult = await sendConfigEmail(user, undefined, undefined, personalizedMessage);\n            userResults.email = emailResult;\n            if (emailResult.success) results.emailsSent++;\n          } catch (error) {\n            userResults.email = { success: false, error: error instanceof Error ? error.message : 'Email failed' };\n          }\n        }\n\n        // Send WhatsApp if enabled and user has phone\n        if (shouldSendWhatsApp && user.phoneNumber) {\n          try {\n            const whatsappResult = await sendConfigWhatsApp(user, undefined, undefined, personalizedMessage);\n            userResults.whatsapp = whatsappResult;\n            if (whatsappResult.success) results.whatsappSent++;\n          } catch (error) {\n            userResults.whatsapp = { success: false, error: error instanceof Error ? error.message : 'WhatsApp failed' };\n          }\n        }\n\n        results.processed++;\n        return userResults;\n        \n      } catch (error) {\n        const errorMsg = `User ${user.email}: ${error instanceof Error ? error.message : 'Processing failed'}`;\n        results.errors.push(errorMsg);\n        console.error(errorMsg);\n        return null;\n      }\n    });\n\n    // Wait for all users in batch to complete\n    await Promise.allSettled(batchPromises);\n    \n    // Wait 1 second between batches for rate limiting\n    if (i + BATCH_SIZE < users.length) {\n      console.log('Waiting 1 second before next batch...');\n      await new Promise(resolve => setTimeout(resolve, 1000));\n    }\n  }\n  \n  console.log(`✅ Completed ${intensity}: ${results.emailsSent} emails, ${results.whatsappSent} WhatsApp`);\n  return results;\n}\n\nexport async function GET(req: Request) {\n  const authHeader = req.headers.get('authorization');\n  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {\n    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });\n  }\n\n  try {\n    const today = getTodayDate();\n    const now = new Date();\n    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;\n    \n    console.log(`\\n🕐 Time-slot sender started at ${currentTime}`);\n\n    // Get automation settings and pre-generated messages\n    let [s] = await db.select().from(settings).limit(1);\n    if (!s) {\n      return NextResponse.json({ error: 'Settings not found' }, { status: 404 });\n    }\n\n    // Check automation status\n    if (!s.automationEnabled) {\n      return NextResponse.json({ message: 'Automation disabled', automationEnabled: false });\n    }\n\n    // Get pre-generated messages\n    const aiMessages = s.aiRoast as any;\n    if (!aiMessages || aiMessages.date !== today) {\n      return NextResponse.json({ \n        message: 'No pre-generated messages found for today. Run pre-generation first.',\n        date: today,\n        hasMessages: false\n      });\n    }\n\n    // Check if we have messages for all intensities\n    const availableIntensities = ['mild', 'medium', 'savage'].filter(intensity => \n      aiMessages[intensity] && aiMessages[intensity].fullMessage\n    );\n    \n    if (availableIntensities.length === 0) {\n      return NextResponse.json({ \n        message: 'No valid pre-generated messages available',\n        date: today,\n        availableIntensities: 0\n      });\n    }\n\n    console.log(`Available message intensities: ${availableIntensities.join(', ')}`);\n\n    // Get all users who should receive messages in current time slot\n    // Filter by: non-admin, completed onboarding, has dailyGrindTime set\n    const allUsers = await db.select().from(users)\n      .where(\n        and(\n          ne(users.role, 'admin'),\n          notLike(users.leetcodeUsername, 'pending_%'),\n          eq(users.onboardingCompleted, true)\n        )\n      );\n\n    // Filter users whose dailyGrindTime falls in current 30-minute slot\n    const usersInTimeSlot = allUsers.filter(user => \n      user.dailyGrindTime && isInCurrentTimeSlot(user.dailyGrindTime)\n    );\n\n    if (usersInTimeSlot.length === 0) {\n      return NextResponse.json({ \n        message: 'No users scheduled for current time slot',\n        currentTime,\n        timeSlot: `${currentTime.split(':')[0]}:${now.getMinutes() < 30 ? '00-30' : '30-60'}`,\n        totalUsers: allUsers.length,\n        usersInSlot: 0\n      });\n    }\n\n    console.log(`\\n📅 Found ${usersInTimeSlot.length} users in current time slot`);\n\n    // Group users by roast intensity\n    const usersByIntensity: {[key: string]: any[]} = {\n      mild: [],\n      medium: [],\n      savage: []\n    };\n\n    usersInTimeSlot.forEach(user => {\n      const intensity = user.roastIntensity || 'medium';\n      if (usersByIntensity[intensity]) {\n        usersByIntensity[intensity].push(user);\n      } else {\n        // Fallback to medium if unknown intensity\n        usersByIntensity.medium.push(user);\n      }\n    });\n\n    console.log('Users by intensity:');\n    Object.entries(usersByIntensity).forEach(([intensity, users]) => {\n      if (users.length > 0) {\n        console.log(`  ${intensity}: ${users.length} users`);\n      }\n    });\n\n    // Process each intensity group separately\n    const allResults: any = {\n      totalProcessed: 0,\n      totalEmailsSent: 0,\n      totalWhatsappSent: 0,\n      byIntensity: {} as any,\n      errors: [] as string[]\n    };\n\n    const shouldSendEmails = s.emailAutomationEnabled;\n    const shouldSendWhatsApp = s.whatsappAutomationEnabled;\n\n    for (const intensity of availableIntensities) {\n      const usersForIntensity = usersByIntensity[intensity] || [];\n      \n      if (usersForIntensity.length === 0) {\n        console.log(`⏭️  Skipping ${intensity}: no users`);\n        continue;\n      }\n\n      const message = aiMessages[intensity];\n      if (!message || !message.fullMessage) {\n        console.log(`⏭️  Skipping ${intensity}: no message available`);\n        continue;\n      }\n\n      try {\n        const results = await processUsersByIntensity(\n          usersForIntensity,\n          intensity,\n          message,\n          shouldSendEmails,\n          shouldSendWhatsApp\n        );\n        \n        allResults.byIntensity[intensity] = results;\n        allResults.totalProcessed += results.processed;\n        allResults.totalEmailsSent += results.emailsSent;\n        allResults.totalWhatsappSent += results.whatsappSent;\n        allResults.errors.push(...results.errors);\n        \n      } catch (error) {\n        const errorMsg = `Failed to process ${intensity} intensity: ${error instanceof Error ? error.message : 'Unknown error'}`;\n        allResults.errors.push(errorMsg);\n        console.error(errorMsg);\n      }\n    }\n\n    // Update settings with sent counts (simplified - you may want more sophisticated tracking)\n    await db.update(settings)\n      .set({\n        emailsSentToday: (s.emailsSentToday || 0) + allResults.totalEmailsSent,\n        whatsappSentToday: (s.whatsappSentToday || 0) + allResults.totalWhatsappSent,\n        lastEmailSent: allResults.totalEmailsSent > 0 ? new Date() : s.lastEmailSent,\n        lastWhatsappSent: allResults.totalWhatsappSent > 0 ? new Date() : s.lastWhatsappSent,\n        updatedAt: new Date()\n      })\n      .where(eq(settings.id, s.id));\n\n    const summary = {\n      currentTime,\n      timeSlot: `${currentTime.split(':')[0]}:${now.getMinutes() < 30 ? '00-30' : '30-60'}`,\n      usersInSlot: usersInTimeSlot.length,\n      processed: allResults.totalProcessed,\n      emailsSent: allResults.totalEmailsSent,\n      whatsappSent: allResults.totalWhatsappSent,\n      intensitiesProcessed: Object.keys(allResults.byIntensity),\n      errorCount: allResults.errors.length\n    };\n\n    console.log(`\\n🎯 Time-slot sender completed:`, summary);\n\n    return NextResponse.json({\n      message: 'Time-slot sending completed',\n      summary,\n      detailed: allResults.byIntensity,\n      errors: allResults.errors.length > 0 ? allResults.errors.slice(0, 5) : undefined // Limit error output\n    });\n\n  } catch (error) {\n    console.error('Time-slot sender error:', error);\n    return NextResponse.json({ \n      error: error instanceof Error ? error.message : 'Time-slot sender failed' \n    }, { status: 500 });\n  }\n}
+ * TIME-SLOT SENDER CRON JOB
+ * Runs every 30 minutes to send messages to users whose dailyGrindTime falls in current slot
+ * Groups users by roast intensity for efficient batch sending
+ */
+
+// Helper function to check if a user's dailyGrindTime falls in current 30-minute slot
+function isInCurrentTimeSlot(userTime: string | null): boolean {
+  if (!userTime || !userTime.match(/^\d{2}:\d{2}$/)) return false;
+
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  // Create 30-minute time slots: 00:00-00:30, 00:30-01:00, etc.
+  const slotStart = currentMinute < 30 ? 0 : 30;
+  const slotEnd = slotStart + 30;
+
+  const [userHour, userMin] = userTime.split(':').map(Number);
+
+  // Check if user's time falls in current slot
+  return userHour === currentHour && userMin >= slotStart && userMin < slotEnd;
+}
+
+// Helper function to process users in batches with concurrent sending
+async function processUsersByIntensity(
+  userList: any[],
+  intensity: string,
+  message: any,
+  shouldSendEmails: boolean,
+  shouldSendWhatsApp: boolean
+): Promise<any> {
+  const BATCH_SIZE = 10;
+
+  const results = {
+    processed: 0,
+    emailsSent: 0,
+    whatsappSent: 0,
+    errors: [] as string[]
+  };
+
+  console.log(`\nProcessing ${userList.length} users with ${intensity} intensity...`);
+
+  for (let i = 0; i < userList.length; i += BATCH_SIZE) {
+    const batch = userList.slice(i, i + BATCH_SIZE);
+    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(userList.length / BATCH_SIZE)} (${batch.length} users)`);
+
+    const batchPromises = batch.map(async (user: any) => {
+      try {
+        const personalizedMessage = message.fullMessage?.replace(/\[NAME\]/g, user.name.split(' ')[0]);
+
+        const userResults: {
+          email: { success: boolean; skipped?: boolean; error?: string };
+          whatsapp: { success: boolean; skipped?: boolean; error?: string };
+          statsUpdate: { success: boolean };
+        } = {
+          email: { success: false, skipped: true },
+          whatsapp: { success: false, skipped: true },
+          statsUpdate: { success: false }
+        };
+
+        // Update stats (non-blocking)
+        try {
+          await updateDailyStatsForUser(user.id, user.leetcodeUsername);
+          userResults.statsUpdate = { success: true };
+        } catch (error) {
+          console.error(`Stats update failed for ${user.email}:`, error);
+        }
+
+        // Send email if enabled
+        if (shouldSendEmails) {
+          try {
+            const emailResult = await sendConfigEmail(user, undefined, undefined, personalizedMessage);
+            userResults.email = emailResult;
+            if (emailResult.success) results.emailsSent++;
+          } catch (error) {
+            userResults.email = { success: false, error: error instanceof Error ? error.message : 'Email failed' };
+          }
+        }
+
+        // Send WhatsApp if enabled and user has phone
+        if (shouldSendWhatsApp && user.phoneNumber) {
+          try {
+            const whatsappResult = await sendConfigWhatsApp(user, undefined, undefined, personalizedMessage);
+            userResults.whatsapp = whatsappResult;
+            if (whatsappResult.success) results.whatsappSent++;
+          } catch (error) {
+            userResults.whatsapp = { success: false, error: error instanceof Error ? error.message : 'WhatsApp failed' };
+          }
+        }
+
+        results.processed++;
+        return userResults;
+
+      } catch (error) {
+        const errorMsg = `User ${user.email}: ${error instanceof Error ? error.message : 'Processing failed'}`;
+        results.errors.push(errorMsg);
+        console.error(errorMsg);
+        return null;
+      }
+    });
+
+    await Promise.allSettled(batchPromises);
+
+    if (i + BATCH_SIZE < userList.length) {
+      console.log('Waiting 1 second before next batch...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  console.log(`Completed ${intensity}: ${results.emailsSent} emails, ${results.whatsappSent} WhatsApp`);
+  return results;
+}
+
+export async function GET(req: Request) {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const today = getTodayDate();
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    console.log(`\nTime-slot sender started at ${currentTime}`);
+
+    // Get automation settings and pre-generated messages
+    const [s] = await db.select().from(settings).limit(1);
+    if (!s) {
+      return NextResponse.json({ error: 'Settings not found' }, { status: 404 });
+    }
+
+    if (!s.automationEnabled) {
+      return NextResponse.json({ message: 'Automation disabled', automationEnabled: false });
+    }
+
+    // Get pre-generated messages
+    const aiMessages = s.aiRoast as any;
+    if (!aiMessages || aiMessages.date !== today) {
+      return NextResponse.json({
+        message: 'No pre-generated messages found for today. Run pre-generation first.',
+        date: today,
+        hasMessages: false
+      });
+    }
+
+    const availableIntensities = ['mild', 'medium', 'savage'].filter(intensity =>
+      aiMessages[intensity] && aiMessages[intensity].fullMessage
+    );
+
+    if (availableIntensities.length === 0) {
+      return NextResponse.json({
+        message: 'No valid pre-generated messages available',
+        date: today,
+        availableIntensities: 0
+      });
+    }
+
+    console.log(`Available message intensities: ${availableIntensities.join(', ')}`);
+
+    // Get all users who should receive messages
+    const allUsers = await db.select().from(users)
+      .where(
+        and(
+          ne(users.role, 'admin'),
+          notLike(users.leetcodeUsername, 'pending_%'),
+          eq(users.onboardingCompleted, true)
+        )
+      );
+
+    // Filter users whose dailyGrindTime falls in current 30-minute slot
+    const usersInTimeSlot = allUsers.filter(user =>
+      user.dailyGrindTime && isInCurrentTimeSlot(user.dailyGrindTime)
+    );
+
+    if (usersInTimeSlot.length === 0) {
+      const slotLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes() < 30 ? '00' : '30'}-${now.getMinutes() < 30 ? now.getHours().toString().padStart(2, '0') + ':30' : (now.getHours() + 1).toString().padStart(2, '0') + ':00'}`;
+      return NextResponse.json({
+        message: 'No users scheduled for current time slot',
+        currentTime,
+        timeSlot: slotLabel,
+        totalUsers: allUsers.length,
+        usersInSlot: 0
+      });
+    }
+
+    console.log(`Found ${usersInTimeSlot.length} users in current time slot`);
+
+    // Group users by roast intensity
+    const usersByIntensity: { [key: string]: any[] } = {
+      mild: [],
+      medium: [],
+      savage: []
+    };
+
+    usersInTimeSlot.forEach(user => {
+      const intensity = user.roastIntensity || 'medium';
+      if (usersByIntensity[intensity]) {
+        usersByIntensity[intensity].push(user);
+      } else {
+        usersByIntensity.medium.push(user);
+      }
+    });
+
+    console.log('Users by intensity:');
+    Object.entries(usersByIntensity).forEach(([intensity, intensityUsers]) => {
+      if (intensityUsers.length > 0) {
+        console.log(`  ${intensity}: ${intensityUsers.length} users`);
+      }
+    });
+
+    // Process each intensity group separately
+    const allResults: any = {
+      totalProcessed: 0,
+      totalEmailsSent: 0,
+      totalWhatsappSent: 0,
+      byIntensity: {} as any,
+      errors: [] as string[]
+    };
+
+    const shouldSendEmails = s.emailAutomationEnabled;
+    const shouldSendWhatsApp = s.whatsappAutomationEnabled;
+
+    for (const intensity of availableIntensities) {
+      const usersForIntensity = usersByIntensity[intensity] || [];
+
+      if (usersForIntensity.length === 0) {
+        console.log(`Skipping ${intensity}: no users`);
+        continue;
+      }
+
+      const message = aiMessages[intensity];
+      if (!message || !message.fullMessage) {
+        console.log(`Skipping ${intensity}: no message available`);
+        continue;
+      }
+
+      try {
+        const results = await processUsersByIntensity(
+          usersForIntensity,
+          intensity,
+          message,
+          shouldSendEmails ?? false,
+          shouldSendWhatsApp ?? false
+        );
+
+        allResults.byIntensity[intensity] = results;
+        allResults.totalProcessed += results.processed;
+        allResults.totalEmailsSent += results.emailsSent;
+        allResults.totalWhatsappSent += results.whatsappSent;
+        allResults.errors.push(...results.errors);
+
+      } catch (error) {
+        const errorMsg = `Failed to process ${intensity} intensity: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        allResults.errors.push(errorMsg);
+        console.error(errorMsg);
+      }
+    }
+
+    // Update settings with sent counts
+    await db.update(settings)
+      .set({
+        emailsSentToday: (s.emailsSentToday || 0) + allResults.totalEmailsSent,
+        whatsappSentToday: (s.whatsappSentToday || 0) + allResults.totalWhatsappSent,
+        lastEmailSent: allResults.totalEmailsSent > 0 ? new Date() : s.lastEmailSent,
+        lastWhatsappSent: allResults.totalWhatsappSent > 0 ? new Date() : s.lastWhatsappSent,
+        updatedAt: new Date()
+      })
+      .where(eq(settings.id, s.id));
+
+    const slotLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes() < 30 ? '00' : '30'}-${now.getMinutes() < 30 ? now.getHours().toString().padStart(2, '0') + ':30' : (now.getHours() + 1).toString().padStart(2, '0') + ':00'}`;
+
+    const summary = {
+      currentTime,
+      timeSlot: slotLabel,
+      usersInSlot: usersInTimeSlot.length,
+      processed: allResults.totalProcessed,
+      emailsSent: allResults.totalEmailsSent,
+      whatsappSent: allResults.totalWhatsappSent,
+      intensitiesProcessed: Object.keys(allResults.byIntensity),
+      errorCount: allResults.errors.length
+    };
+
+    console.log(`\nTime-slot sender completed:`, summary);
+
+    return NextResponse.json({
+      message: 'Time-slot sending completed',
+      summary,
+      detailed: allResults.byIntensity,
+      errors: allResults.errors.length > 0 ? allResults.errors.slice(0, 5) : undefined
+    });
+
+  } catch (error) {
+    console.error('Time-slot sender error:', error);
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Time-slot sender failed'
+    }, { status: 500 });
+  }
+}

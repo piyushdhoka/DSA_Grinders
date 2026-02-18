@@ -7,7 +7,7 @@ export type { User, Group };
 // ============================================================
 
 export interface AuthenticatedUser {
-    id: string; // Changed to string for UUID
+    id: number;
     name: string;
     email: string;
     leetcodeUsername: string;
@@ -21,7 +21,7 @@ export interface AuthenticatedUser {
 }
 
 export interface PublicUserProfile {
-    id: string; // Changed to string for UUID
+    id: number;
     name: string;
     leetcodeUsername: string;
     github?: string;
@@ -65,7 +65,7 @@ export interface LeetCodeAPIError {
 // ============================================================
 
 export interface LeaderboardEntry {
-    id: string; // UUID
+    id: number;
     name: string;
     email: string;
     leetcodeUsername: string;

@@ -25,7 +25,7 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
         const [existingMembership] = await db.select()
             .from(groupMembers)
             .where(and(
-                eq(groupMembers.userId, user.id),
+                eq(groupMembers.userId, Number(user.id)),
                 eq(groupMembers.groupId, group.id)
             ))
             .limit(1);
@@ -36,7 +36,7 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
 
         // Add user to group via join table (supports multi-group membership)
         await db.insert(groupMembers).values({
-            userId: user.id,
+            userId: Number(user.id),
             groupId: group.id,
         });
 

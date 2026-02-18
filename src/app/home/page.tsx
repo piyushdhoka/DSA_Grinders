@@ -163,7 +163,7 @@ export default function HomePage() {
     });
 
     const leaveGroupMutation = useMutation({
-        mutationFn: async (groupId: string) => {
+        mutationFn: async (groupId: number) => {
             const res = await fetch("/api/groups/leave", {
                 method: "POST",
                 headers: {

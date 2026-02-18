@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { db } from '@/db/drizzle';
-import { groups, groupMembers, users } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { groups, groupMembers, users, dailyStats } from '@/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
+import { getTodayDate } from '@/lib/utils';
 
 export const GET = requireAuth(async (req: NextRequest, user, context) => {
     try {
@@ -24,7 +25,7 @@ export const GET = requireAuth(async (req: NextRequest, user, context) => {
         const [isMember] = await db.select()
             .from(groupMembers)
             .where(and(
-                eq(groupMembers.userId, user.id),
+                eq(groupMembers.userId, Number(user.id)),
                 eq(groupMembers.groupId, group.id)
             ))
             .limit(1);
@@ -33,7 +34,7 @@ export const GET = requireAuth(async (req: NextRequest, user, context) => {
             return NextResponse.json({ error: 'You are not a member of this group' }, { status: 403 });
         }
 
-        // Fetch all members of this group with their stats via join table
+        // Fetch all members of this group (basic info only)
         const members = await db.select({
             id: users.id,
             name: users.name,
@@ -42,34 +43,68 @@ export const GET = requireAuth(async (req: NextRequest, user, context) => {
             gfgUsername: users.gfgUsername,
             github: users.github,
             linkedin: users.linkedin,
-            todayPoints: users.todayPoints,
-            easy: users.easySolved,
-            medium: users.mediumSolved,
-            hard: users.hardSolved,
-            totalProblems: users.totalSolved,
-            gfgSolved: users.gfgSolved,
-            gfgScore: users.gfgScore,
-            ranking: users.ranking,
-            avatar: users.avatar,
-            country: users.country,
-            streak: users.streak,
-            lastSubmission: users.lastSubmission,
-            recentProblems: users.recentProblems,
-            lastUpdated: users.lastStatUpdate,
         })
             .from(groupMembers)
             .innerJoin(users, eq(groupMembers.userId, users.id))
             .where(eq(groupMembers.groupId, group.id));
 
+        const today = getTodayDate();
+        const memberIds = members.map(m => m.id);
+
+        // Fetch today's stats for all group members
+        const allStats = await db.select().from(dailyStats)
+            .where(eq(dailyStats.platform, 'leetcode'))
+            .orderBy(desc(dailyStats.date));
+
+        // Build maps: most recent stats per user
+        const statsMap = new Map<number, typeof allStats[number]>();
+        for (const stat of allStats) {
+            if (memberIds.includes(stat.userId) && !statsMap.has(stat.userId)) {
+                statsMap.set(stat.userId, stat);
+            }
+        }
+
+        // GFG stats
+        const gfgStatsAll = await db.select().from(dailyStats)
+            .where(and(eq(dailyStats.date, today), eq(dailyStats.platform, 'gfg')));
+        const gfgMap = new Map<number, typeof gfgStatsAll[number]>();
+        for (const stat of gfgStatsAll) {
+            if (memberIds.includes(stat.userId)) {
+                gfgMap.set(stat.userId, stat);
+            }
+        }
+
         // Transform and sort
         const leaderboardData = members.map(m => {
-            const easy = m.easy || 0;
-            const medium = m.medium || 0;
-            const hard = m.hard || 0;
+            const stat = statsMap.get(m.id);
+            const gfg = gfgMap.get(m.id);
+            const easy = stat?.easy || 0;
+            const medium = stat?.medium || 0;
+            const hard = stat?.hard || 0;
             const totalScore = easy * 1 + medium * 3 + hard * 6;
 
             return {
-                ...m,
+                id: m.id,
+                name: m.name,
+                email: m.email,
+                leetcodeUsername: m.leetcodeUsername,
+                gfgUsername: m.gfgUsername,
+                github: m.github,
+                linkedin: m.linkedin,
+                todayPoints: (stat?.todayPoints || 0) + (gfg?.todayPoints || 0),
+                easy,
+                medium,
+                hard,
+                totalProblems: stat?.total || 0,
+                gfgSolved: gfg?.total || 0,
+                gfgScore: gfg?.todayPoints || 0,
+                ranking: stat?.ranking || 0,
+                avatar: stat?.avatar || '',
+                country: stat?.country || '',
+                streak: stat?.streak || 0,
+                lastSubmission: stat?.lastSubmission || null,
+                recentProblems: stat?.recentProblems || [],
+                lastUpdated: stat?.date || null,
                 totalScore,
                 rank: 0,
             };

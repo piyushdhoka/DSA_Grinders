@@ -16,7 +16,7 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
         const [membership] = await db.select()
             .from(groupMembers)
             .where(and(
-                eq(groupMembers.userId, user.id),
+                eq(groupMembers.userId, Number(user.id)),
                 eq(groupMembers.groupId, groupId)
             ))
             .limit(1);
@@ -32,7 +32,7 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
             return NextResponse.json({ error: 'Group not found' }, { status: 404 });
         }
 
-        if (group.ownerId === user.id) {
+        if (group.owner === user.id) {
             // Count remaining members
             const [memberCount] = await db.select({ count: sql<number>`count(*)::int` })
                 .from(groupMembers)
@@ -60,7 +60,7 @@ export const POST = requireAuth(async (req: NextRequest, user: AuthUser) => {
         // Regular member leaving
         await db.delete(groupMembers)
             .where(and(
-                eq(groupMembers.userId, user.id),
+                eq(groupMembers.userId, Number(user.id)),
                 eq(groupMembers.groupId, groupId)
             ));
 
