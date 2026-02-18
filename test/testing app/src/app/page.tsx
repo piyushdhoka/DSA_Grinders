@@ -43,7 +43,7 @@ export default function TimeSlotTester() {
   const triggerPreGeneration = async () => {
     setLoading(prev => ({ ...prev, preGen: true }));
     try {
-      const response = await fetch('http://localhost:3000/api/cron/pre-generate');
+      const response = await fetch('/api/proxy/pre-generate');
       const data = await response.json();
       
       addTestResult({
@@ -67,8 +67,8 @@ export default function TimeSlotTester() {
     setLoading(prev => ({ ...prev, timeSender: true }));
     try {
       const url = timeSlot 
-        ? `http://localhost:3000/api/cron/test-time-slot-sender?timeSlot=${encodeURIComponent(timeSlot)}`
-        : 'http://localhost:3000/api/cron/test-time-slot-sender?timeSlot=' + encodeURIComponent(
+        ? `/api/proxy/time-slot-sender?timeSlot=${encodeURIComponent(timeSlot)}`
+        : '/api/proxy/time-slot-sender?timeSlot=' + encodeURIComponent(
             Math.floor(currentTime.getMinutes() / 30) === 0 
               ? `${currentTime.getHours().toString().padStart(2, '0')}:00-${currentTime.getHours().toString().padStart(2, '0')}:30`
               : `${currentTime.getHours().toString().padStart(2, '0')}:30-${(currentTime.getHours() + 1).toString().padStart(2, '0')}:00`
