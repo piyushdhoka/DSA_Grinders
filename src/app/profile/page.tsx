@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, Save, Phone, Github, Linkedin, Settings, Clock } from "lucide-react";
 
 export default function ProfilePage() {
-    const { user, token, isLoading: authLoading } = useAuth();
+    const { user, token, isLoading: authLoading, updateUser } = useAuth();
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,7 @@ export default function ProfilePage() {
     const [github, setGithub] = useState("");
     const [linkedin, setLinkedin] = useState("");
     const [gfgUsername, setGfgUsername] = useState("");
+    const [dailyGrindTime, setDailyGrindTime] = useState("09:00");
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -43,6 +44,7 @@ export default function ProfilePage() {
             setLinkedin(li.includes('linkedin.com/in/') ? li.split('linkedin.com/in/').pop() || "" : li);
 
             setGfgUsername(user.gfgUsername || "");
+            setDailyGrindTime(user.dailyGrindTime || "09:00");
         }
     }, [user]);
 
@@ -65,6 +67,7 @@ export default function ProfilePage() {
                     github: github.trim(),
                     linkedin: linkedin.trim() || null,
                     gfgUsername: gfgUsername.trim() || null,
+                    dailyGrindTime,
                 }),
             });
 
@@ -72,6 +75,17 @@ export default function ProfilePage() {
 
             if (!res.ok) {
                 throw new Error(data.error || "Failed to update profile");
+            }
+
+            if (data.user) {
+                updateUser({
+                    name,
+                    phoneNumber: phoneNumber.trim() || null,
+                    github: github.trim(),
+                    linkedin: linkedin.trim() || null,
+                    gfgUsername: gfgUsername.trim() || null,
+                    dailyGrindTime,
+                });
             }
 
             setSuccess("Profile updated successfully!");
@@ -280,6 +294,28 @@ export default function ProfilePage() {
                                             />
                                         </div>
 
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-50">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 ml-1">Notification Timing</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-2.5">
+                                            <Label htmlFor="dailyGrindTime" className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                                <Clock className="h-3.5 w-3.5 text-blue-500" />
+                                                Daily Grind Time
+                                            </Label>
+                                            <Input
+                                                id="dailyGrindTime"
+                                                type="time"
+                                                value={dailyGrindTime}
+                                                onChange={(e) => setDailyGrindTime(e.target.value)}
+                                                required
+                                                disabled={isSaving}
+                                                className="h-14 px-5 bg-gray-50 border-gray-100/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all rounded-[1.25rem] text-base font-medium"
+                                            />
+                                            <p className="text-xs text-gray-400 font-medium ml-1">Asia/Kolkata time zone, 24-hour format.</p>
+                                        </div>
                                     </div>
                                 </div>
 

@@ -18,6 +18,7 @@ export interface AuthenticatedUser {
     onboardingCompleted: boolean;
     groupMemberOf?: string | null;
     isProfileIncomplete: boolean;
+    dailyGrindTime?: string | null;
 }
 
 export interface PublicUserProfile {

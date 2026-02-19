@@ -17,6 +17,7 @@ interface User {
     isProfileIncomplete?: boolean;
     onboardingCompleted?: boolean;
     roastIntensity?: 'mild' | 'medium' | 'savage';
+    dailyGrindTime?: string | null;
 }
 
 interface AuthContextType {

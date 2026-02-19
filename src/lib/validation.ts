@@ -21,6 +21,10 @@ export const profileUpdateSchema = z.object({
     linkedin: z.string().max(255).optional().nullable(),
     leetcodeUsername: z.string().min(1).max(255).optional(),
     gfgUsername: z.string().min(1).max(255).optional().nullable(),
+    dailyGrindTime: z.string()
+        .regex(/^\d{2}:\d{2}$/, 'Invalid time format. Use HH:MM')
+        .optional()
+        .nullable(),
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;

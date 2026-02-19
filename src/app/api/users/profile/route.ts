@@ -14,6 +14,7 @@ interface UserUpdatePayload {
   phoneNumber?: string | null;
   gfgUsername?: string | null;
   onboardingCompleted?: boolean;
+  dailyGrindTime?: string | null;
 }
 
 export const PUT = requireAuth(async (req: NextRequest, user) => {
@@ -35,7 +36,7 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
       );
     }
 
-    const { name, phoneNumber, github, linkedin, leetcodeUsername, gfgUsername } = validation.data;
+    const { name, phoneNumber, github, linkedin, leetcodeUsername, gfgUsername, dailyGrindTime } = validation.data;
 
     const updateData: UserUpdatePayload = {};
     if (name) updateData.name = name;
@@ -57,6 +58,10 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
 
     if (phoneNumber !== undefined) {
       updateData.phoneNumber = phoneNumber ? phoneNumber.replace(/\s/g, '') : null;
+    }
+
+    if (dailyGrindTime !== undefined) {
+      updateData.dailyGrindTime = dailyGrindTime || null;
     }
 
 
