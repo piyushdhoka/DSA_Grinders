@@ -56,12 +56,15 @@ export async function getCurrentUser(req: NextRequest) {
 
 export function isProfileIncomplete(user: User | any): boolean {
     if (!user) return true;
-    // Only require leetcode and phone - github/linkedin are optional
+
+    // If onboarding was already completed, the profile is NEVER incomplete.
+    // This prevents re-triggering the onboarding flow on subsequent logins.
+    if (user.onboardingCompleted) return false;
+
+    // For users who haven't completed onboarding, check minimum required fields.
     return (
         !user.leetcodeUsername ||
-        user.leetcodeUsername.startsWith('pending_') ||
-        !user.phoneNumber ||
-        !user.onboardingCompleted  // Check if onboarding was completed
+        user.leetcodeUsername.startsWith('pending_')
     );
 }
 

@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
 import ActivityFeed from "@/components/ActivityFeed";
 import { LeaderboardEntry, LeetCodeSubmission, GroupWithMembership } from "@/types";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -55,14 +55,14 @@ export default function HomePage() {
         { title: "Valid Sudoku", slug: "valid-sudoku", difficulty: "Medium" },
         { title: "Encode and Decode Strings", slug: "encode-and-decode-strings", difficulty: "Medium" },
         { title: "Longest Consecutive Sequence", slug: "longest-consecutive-sequence", difficulty: "Medium" },
-        
+
         // Two Pointers
         { title: "Valid Palindrome", slug: "valid-palindrome", difficulty: "Easy" },
         { title: "Two Sum II", slug: "two-sum-ii-input-array-is-sorted", difficulty: "Medium" },
         { title: "3Sum", slug: "3sum", difficulty: "Medium" },
         { title: "Container With Most Water", slug: "container-with-most-water", difficulty: "Medium" },
         { title: "Trapping Rain Water", slug: "trapping-rain-water", difficulty: "Hard" },
-        
+
         // Sliding Window
         { title: "Best Time to Buy and Sell Stock", slug: "best-time-to-buy-and-sell-stock", difficulty: "Easy" },
         { title: "Longest Substring Without Repeating Characters", slug: "longest-substring-without-repeating-characters", difficulty: "Medium" },
@@ -70,7 +70,7 @@ export default function HomePage() {
         { title: "Permutation in String", slug: "permutation-in-string", difficulty: "Medium" },
         { title: "Minimum Window Substring", slug: "minimum-window-substring", difficulty: "Hard" },
         { title: "Sliding Window Maximum", slug: "sliding-window-maximum", difficulty: "Hard" },
-        
+
         // Stack
         { title: "Valid Parentheses", slug: "valid-parentheses", difficulty: "Easy" },
         { title: "Min Stack", slug: "min-stack", difficulty: "Medium" },
@@ -79,7 +79,7 @@ export default function HomePage() {
         { title: "Daily Temperatures", slug: "daily-temperatures", difficulty: "Medium" },
         { title: "Car Fleet", slug: "car-fleet", difficulty: "Medium" },
         { title: "Largest Rectangle in Histogram", slug: "largest-rectangle-in-histogram", difficulty: "Hard" },
-        
+
         // Binary Search
         { title: "Binary Search", slug: "binary-search", difficulty: "Easy" },
         { title: "Search a 2D Matrix", slug: "search-a-2d-matrix", difficulty: "Medium" },
@@ -88,7 +88,7 @@ export default function HomePage() {
         { title: "Search in Rotated Sorted Array", slug: "search-in-rotated-sorted-array", difficulty: "Medium" },
         { title: "Time Based Key-Value Store", slug: "time-based-key-value-store", difficulty: "Medium" },
         { title: "Median of Two Sorted Arrays", slug: "median-of-two-sorted-arrays", difficulty: "Hard" },
-        
+
         // Linked List
         { title: "Reverse Linked List", slug: "reverse-linked-list", difficulty: "Easy" },
         { title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", difficulty: "Easy" },
@@ -101,7 +101,7 @@ export default function HomePage() {
         { title: "LRU Cache", slug: "lru-cache", difficulty: "Medium" },
         { title: "Merge k Sorted Lists", slug: "merge-k-sorted-lists", difficulty: "Hard" },
         { title: "Reverse Nodes in k-Group", slug: "reverse-nodes-in-k-group", difficulty: "Hard" },
-        
+
         // Trees
         { title: "Invert Binary Tree", slug: "invert-binary-tree", difficulty: "Easy" },
         { title: "Maximum Depth of Binary Tree", slug: "maximum-depth-of-binary-tree", difficulty: "Easy" },
@@ -118,12 +118,12 @@ export default function HomePage() {
         { title: "Construct Binary Tree from Preorder and Inorder Traversal", slug: "construct-binary-tree-from-preorder-and-inorder-traversal", difficulty: "Medium" },
         { title: "Binary Tree Maximum Path Sum", slug: "binary-tree-maximum-path-sum", difficulty: "Hard" },
         { title: "Serialize and Deserialize Binary Tree", slug: "serialize-and-deserialize-binary-tree", difficulty: "Hard" },
-        
+
         // Tries
         { title: "Implement Trie", slug: "implement-trie-prefix-tree", difficulty: "Medium" },
         { title: "Design Add and Search Words Data Structure", slug: "design-add-and-search-words-data-structure", difficulty: "Medium" },
         { title: "Word Search II", slug: "word-search-ii", difficulty: "Hard" },
-        
+
         // Heap / Priority Queue
         { title: "Kth Largest Element in a Stream", slug: "kth-largest-element-in-a-stream", difficulty: "Easy" },
         { title: "Last Stone Weight", slug: "last-stone-weight", difficulty: "Easy" },
@@ -132,7 +132,7 @@ export default function HomePage() {
         { title: "Task Scheduler", slug: "task-scheduler", difficulty: "Medium" },
         { title: "Design Twitter", slug: "design-twitter", difficulty: "Medium" },
         { title: "Find Median from Data Stream", slug: "find-median-from-data-stream", difficulty: "Hard" },
-        
+
         // Backtracking
         { title: "Subsets", slug: "subsets", difficulty: "Medium" },
         { title: "Combination Sum", slug: "combination-sum", difficulty: "Medium" },
@@ -143,7 +143,7 @@ export default function HomePage() {
         { title: "Palindrome Partitioning", slug: "palindrome-partitioning", difficulty: "Medium" },
         { title: "Letter Combinations of a Phone Number", slug: "letter-combinations-of-a-phone-number", difficulty: "Medium" },
         { title: "N-Queens", slug: "n-queens", difficulty: "Hard" },
-        
+
         // Graphs
         { title: "Number of Islands", slug: "number-of-islands", difficulty: "Medium" },
         { title: "Clone Graph", slug: "clone-graph", difficulty: "Medium" },
@@ -158,7 +158,7 @@ export default function HomePage() {
         { title: "Number of Connected Components in an Undirected Graph", slug: "number-of-connected-components-in-an-undirected-graph", difficulty: "Medium" },
         { title: "Graph Valid Tree", slug: "graph-valid-tree", difficulty: "Medium" },
         { title: "Word Ladder", slug: "word-ladder", difficulty: "Hard" },
-        
+
         // Advanced Graphs
         { title: "Reconstruct Itinerary", slug: "reconstruct-itinerary", difficulty: "Hard" },
         { title: "Min Cost to Connect All Points", slug: "min-cost-to-connect-all-points", difficulty: "Medium" },
@@ -166,7 +166,7 @@ export default function HomePage() {
         { title: "Swim in Rising Water", slug: "swim-in-rising-water", difficulty: "Hard" },
         { title: "Alien Dictionary", slug: "alien-dictionary", difficulty: "Hard" },
         { title: "Cheapest Flights Within K Stops", slug: "cheapest-flights-within-k-stops", difficulty: "Medium" },
-        
+
         // 1-D Dynamic Programming
         { title: "Climbing Stairs", slug: "climbing-stairs", difficulty: "Easy" },
         { title: "Min Cost Climbing Stairs", slug: "min-cost-climbing-stairs", difficulty: "Easy" },
@@ -180,7 +180,7 @@ export default function HomePage() {
         { title: "Word Break", slug: "word-break", difficulty: "Medium" },
         { title: "Longest Increasing Subsequence", slug: "longest-increasing-subsequence", difficulty: "Medium" },
         { title: "Partition Equal Subset Sum", slug: "partition-equal-subset-sum", difficulty: "Medium" },
-        
+
         // 2-D Dynamic Programming
         { title: "Unique Paths", slug: "unique-paths", difficulty: "Medium" },
         { title: "Longest Common Subsequence", slug: "longest-common-subsequence", difficulty: "Medium" },
@@ -193,7 +193,7 @@ export default function HomePage() {
         { title: "Edit Distance", slug: "edit-distance", difficulty: "Medium" },
         { title: "Burst Balloons", slug: "burst-balloons", difficulty: "Hard" },
         { title: "Regular Expression Matching", slug: "regular-expression-matching", difficulty: "Hard" },
-        
+
         // Greedy
         { title: "Maximum Subarray", slug: "maximum-subarray", difficulty: "Medium" },
         { title: "Jump Game", slug: "jump-game", difficulty: "Medium" },
@@ -203,7 +203,7 @@ export default function HomePage() {
         { title: "Merge Triplets to Form Target Triplet", slug: "merge-triplets-to-form-target-triplet", difficulty: "Medium" },
         { title: "Partition Labels", slug: "partition-labels", difficulty: "Medium" },
         { title: "Valid Parenthesis String", slug: "valid-parenthesis-string", difficulty: "Medium" },
-        
+
         // Intervals
         { title: "Insert Interval", slug: "insert-interval", difficulty: "Medium" },
         { title: "Merge Intervals", slug: "merge-intervals", difficulty: "Medium" },
@@ -211,7 +211,7 @@ export default function HomePage() {
         { title: "Meeting Rooms", slug: "meeting-rooms", difficulty: "Easy" },
         { title: "Meeting Rooms II", slug: "meeting-rooms-ii", difficulty: "Medium" },
         { title: "Minimum Interval to Include Each Query", slug: "minimum-interval-to-include-each-query", difficulty: "Hard" },
-        
+
         // Math & Geometry
         { title: "Rotate Image", slug: "rotate-image", difficulty: "Medium" },
         { title: "Spiral Matrix", slug: "spiral-matrix", difficulty: "Medium" },
@@ -221,7 +221,7 @@ export default function HomePage() {
         { title: "Pow(x, n)", slug: "powx-n", difficulty: "Medium" },
         { title: "Multiply Strings", slug: "multiply-strings", difficulty: "Medium" },
         { title: "Detect Squares", slug: "detect-squares", difficulty: "Medium" },
-        
+
         // Bit Manipulation
         { title: "Single Number", slug: "single-number", difficulty: "Easy" },
         { title: "Number of 1 Bits", slug: "number-of-1-bits", difficulty: "Easy" },
@@ -506,7 +506,7 @@ export default function HomePage() {
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* Greeting & Problem */}
                         <div className="flex-1 min-w-0">
                             <h1 className="text-lg font-medium text-[#202124] dark:text-white leading-none">
@@ -514,7 +514,7 @@ export default function HomePage() {
                             </h1>
                             <div className="flex items-center gap-2 text-sm text-[#5F6368] dark:text-muted-foreground -mt-2">
                                 <span>Today's challenge:</span>
-                                <a 
+                                <a
                                     href={`https://leetcode.com/problems/${dailyProblem.slug}/`}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -523,11 +523,10 @@ export default function HomePage() {
                                     {dailyProblem.title}
                                     <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                    dailyProblem.difficulty === 'Easy' ? 'bg-[#CEEAD6] text-[#0D652D]' :
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${dailyProblem.difficulty === 'Easy' ? 'bg-[#CEEAD6] text-[#0D652D]' :
                                     dailyProblem.difficulty === 'Medium' ? 'bg-[#FEEFC3] text-[#E37400]' :
-                                    'bg-[#FAD2CF] text-[#A50E0E]'
-                                }`}>
+                                        'bg-[#FAD2CF] text-[#A50E0E]'
+                                    }`}>
                                     {dailyProblem.difficulty}
                                 </span>
                             </div>
@@ -540,11 +539,10 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                         <button
                             onClick={() => setActiveGroup(null)}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all whitespace-nowrap ${
-                                !activeGroup
-                                    ? 'bg-[#D2E3FC] text-[#174EA6] border-[#4285F4]/30 dark:bg-[#4285F4]/15 dark:text-[#8AB4F8] dark:border-[#4285F4]/30'
-                                    : 'bg-white dark:bg-card text-[#5F6368] dark:text-muted-foreground border-[#E8EAED] dark:border-border hover:bg-[#F1F3F4] dark:hover:bg-muted'
-                            }`}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all whitespace-nowrap ${!activeGroup
+                                ? 'bg-[#D2E3FC] text-[#174EA6] border-[#4285F4]/30 dark:bg-[#4285F4]/15 dark:text-[#8AB4F8] dark:border-[#4285F4]/30'
+                                : 'bg-white dark:bg-card text-[#5F6368] dark:text-muted-foreground border-[#E8EAED] dark:border-border hover:bg-[#F1F3F4] dark:hover:bg-muted'
+                                }`}
                         >
                             Global
                         </button>
@@ -552,11 +550,10 @@ export default function HomePage() {
                             <button
                                 key={group.code}
                                 onClick={() => setActiveGroup(group)}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all whitespace-nowrap ${
-                                    activeGroup?.code === group.code
-                                        ? 'bg-[#D2E3FC] text-[#174EA6] border-[#4285F4]/30 dark:bg-[#4285F4]/15 dark:text-[#8AB4F8] dark:border-[#4285F4]/30'
-                                        : 'bg-white dark:bg-card text-[#5F6368] dark:text-muted-foreground border-[#E8EAED] dark:border-border hover:bg-[#F1F3F4] dark:hover:bg-muted'
-                                }`}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all whitespace-nowrap ${activeGroup?.code === group.code
+                                    ? 'bg-[#D2E3FC] text-[#174EA6] border-[#4285F4]/30 dark:bg-[#4285F4]/15 dark:text-[#8AB4F8] dark:border-[#4285F4]/30'
+                                    : 'bg-white dark:bg-card text-[#5F6368] dark:text-muted-foreground border-[#E8EAED] dark:border-border hover:bg-[#F1F3F4] dark:hover:bg-muted'
+                                    }`}
                             >
                                 {group.name}
                             </button>
@@ -581,21 +578,19 @@ export default function HomePage() {
                         <div className="flex bg-[#F1F3F4] dark:bg-muted p-1 rounded-full border border-[#E8EAED] dark:border-border">
                             <button
                                 onClick={() => setLeaderboardType('daily')}
-                                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${
-                                    leaderboardType === 'daily'
-                                        ? 'bg-white dark:bg-card text-[#202124] dark:text-foreground shadow-sm'
-                                        : 'text-[#5F6368] dark:text-muted-foreground hover:text-[#202124] dark:hover:text-foreground'
-                                }`}
+                                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${leaderboardType === 'daily'
+                                    ? 'bg-white dark:bg-card text-[#202124] dark:text-foreground shadow-sm'
+                                    : 'text-[#5F6368] dark:text-muted-foreground hover:text-[#202124] dark:hover:text-foreground'
+                                    }`}
                             >
                                 Daily
                             </button>
                             <button
                                 onClick={() => setLeaderboardType('allTime')}
-                                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${
-                                    leaderboardType === 'allTime'
-                                        ? 'bg-white dark:bg-card text-[#202124] dark:text-foreground shadow-sm'
-                                        : 'text-[#5F6368] dark:text-muted-foreground hover:text-[#202124] dark:hover:text-foreground'
-                                }`}
+                                className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all ${leaderboardType === 'allTime'
+                                    ? 'bg-white dark:bg-card text-[#202124] dark:text-foreground shadow-sm'
+                                    : 'text-[#5F6368] dark:text-muted-foreground hover:text-[#202124] dark:hover:text-foreground'
+                                    }`}
                             >
                                 All Time
                             </button>
@@ -711,7 +706,7 @@ export default function HomePage() {
                                                             <Info className="w-3 h-3 text-[#9AA0A6] hover:text-[#5F6368] transition-colors shrink-0" />
                                                         </span>
                                                     </TooltipTrigger>
-                                                    <TooltipContent side="top" sideOffset={8} className="!bg-white dark:!bg-card !text-[#202124] dark:!text-foreground border border-[#E8EAED] dark:border-border shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] !rounded-xl !px-4 !py-3 min-w-[140px]">
+                                                    <TooltipContent side="top" sideOffset={8} className="bg-white! dark:bg-card! text-[#202124]! dark:text-foreground! border border-[#E8EAED] dark:border-border shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] rounded-xl! px-4! py-3! min-w-[140px]">
                                                         <div className="flex items-center justify-between gap-6 mb-1">
                                                             <span className="text-[#34A853] font-medium text-xs">Easy</span>
                                                             <span className="font-medium text-xs text-[#202124] dark:text-foreground">1 pt</span>
@@ -848,7 +843,7 @@ export default function HomePage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <PWAInstallPrompt />
+
         </div>
     );
 }

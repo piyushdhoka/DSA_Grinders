@@ -98,19 +98,15 @@ export const PUT = requireAuth(async (req: NextRequest, user) => {
       }
     }
 
-    // Recalculate profile completion
-    const isProfileIncomplete =
-      !updatedUser.leetcodeUsername ||
-      updatedUser.leetcodeUsername.startsWith('pending_') ||
-      !updatedUser.github ||
-      updatedUser.github === 'pending' ||
-      !updatedUser.phoneNumber ||
-      !updatedUser.linkedin;
+    // Recalculate profile completion using the centralized function
+    // Use same logic as auth.ts: onboardingCompleted=true means profile is complete
+    const { isProfileIncomplete } = await import('@/lib/auth');
+    const profileIncomplete = isProfileIncomplete(updatedUser);
 
     return NextResponse.json({
       user: {
         ...updatedUser,
-        isProfileIncomplete
+        isProfileIncomplete: profileIncomplete
       }
     });
 
