@@ -18,35 +18,33 @@ export default function LeaderboardRow({ entry, rank, isCurrentUser }: Leaderboa
                 hidden: { opacity: 0, y: 10 },
                 visible: { opacity: 1, y: 0 }
             }}
-            className={`px-4 md:px-8 py-5 flex items-center gap-4 md:gap-8 transition-all duration-300 hover:bg-[#F1F3F4] dark:hover:bg-muted/50 relative border-b border-[#E8EAED] dark:border-border last:border-0 ${isCurrentUser ? 'bg-[#D2E3FC]/30 dark:bg-primary/5 border-l-4 border-l-[#4285F4]' : ''
+            className={`px-4 md:px-6 py-3.5 flex items-center gap-4 md:gap-6 transition-all duration-200 hover:bg-[#F8F9FA] dark:hover:bg-muted/30 relative border-b border-[#E8EAED]/60 dark:border-border last:border-0 ${isCurrentUser ? 'bg-[#D2E3FC]/20 dark:bg-[#4285F4]/5' : ''
                 }`}
         >
-            {/* Rank Indicator */}
-            <div className="w-8 md:w-12 flex items-center justify-center shrink-0">
+            {/* Rank */}
+            <div className="w-8 flex items-center justify-center shrink-0">
                 {rank === 1 ? (
-                    <div className="relative">
-                        <Trophy className="w-6 h-6 md:w-7 md:h-7 text-[#FBBC04]" />
-                    </div>
+                    <Trophy className="w-5 h-5 text-[#FBBC04]" />
                 ) : rank === 2 ? (
-                    <Medal className="w-6 h-6 md:w-7 md:h-7 text-[#9AA0A6]" />
+                    <Medal className="w-5 h-5 text-[#9AA0A6]" />
                 ) : rank === 3 ? (
-                    <Medal className="w-6 h-6 md:w-7 md:h-7 text-[#E37400]" />
+                    <Medal className="w-5 h-5 text-[#E37400]" />
                 ) : (
-                    <span className="text-xs md:text-base font-black text-[#5F6368] dark:text-muted-foreground">#{rank}</span>
+                    <span className="text-sm font-medium text-[#5F6368] dark:text-muted-foreground tabular-nums">{rank}</span>
                 )}
             </div>
 
-            {/* Avatar & User Info Group */}
-            <div className="flex-1 flex items-center gap-4 min-w-0">
+            {/* Avatar & User Info */}
+            <div className="flex-1 flex items-center gap-3 min-w-0">
                 <HoverCard openDelay={200}>
                     <HoverCardTrigger asChild>
                         <div className="relative shrink-0 cursor-pointer group/avatar">
-                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl overflow-hidden bg-white dark:bg-card shrink-0 border-2 transition-all duration-300 group-hover/avatar:scale-105 ${isCurrentUser ? 'border-[#4285F4]' : 'border-[#E8EAED] dark:border-border'
+                            <div className={`w-10 h-10 rounded-full overflow-hidden bg-[#F1F3F4] dark:bg-muted shrink-0 transition-all duration-200 group-hover/avatar:scale-105 ${isCurrentUser ? 'ring-2 ring-[#4285F4]/30' : ''
                                 }`}>
                                 {entry.avatar ? (
                                     <img src={entry.avatar} alt={entry.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-lg md:text-xl font-black">
+                                    <div className="w-full h-full flex items-center justify-center text-[#5F6368] dark:text-muted-foreground text-sm font-medium">
                                         {entry.name.charAt(0).toUpperCase()}
                                     </div>
                                 )}
@@ -105,7 +103,19 @@ export default function LeaderboardRow({ entry, rank, isCurrentUser }: Leaderboa
                                 </div>
                             </div>
 
-                            <div className="mt-6 pt-6 border-t border-border flex justify-end items-center relative z-10">
+                            <div className="mt-6 pt-6 border-t border-border flex justify-between items-center relative z-10">
+                                <div className="flex items-center gap-2">
+                                    {entry.github && entry.github !== 'not-provided' && entry.github !== 'pending' && (
+                                        <a href={entry.github} target="_blank" rel="noopener noreferrer" className="text-[#9AA0A6] hover:text-[#202124] dark:hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted">
+                                            <Github className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                    {entry.linkedin && entry.linkedin !== 'not-provided' && entry.linkedin !== 'pending' && (
+                                        <a href={entry.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#9AA0A6] hover:text-[#0077b5] transition-colors p-1.5 rounded-lg hover:bg-muted">
+                                            <Linkedin className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                </div>
                                 {entry.streak && entry.streak > 0 && (
                                     <div className="flex items-center gap-1.5 text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-xl border border-orange-500/20">
                                         <Flame className="w-3.5 h-3.5" />
@@ -118,65 +128,42 @@ export default function LeaderboardRow({ entry, rank, isCurrentUser }: Leaderboa
                 </HoverCard>
 
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 md:gap-3 mb-1">
-                        <span className="font-black text-sm md:text-xl text-foreground tracking-tight whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-[#202124] dark:text-foreground truncate">
                             {entry.name.split(' ')[0]}
                         </span>
                         {isCurrentUser && (
-                            <span className="text-[7px] md:text-[9px] font-black tracking-[0.15em] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-lg uppercase">YOU</span>
+                            <span className="text-[9px] font-medium text-[#4285F4] dark:text-[#8AB4F8] bg-[#D2E3FC]/50 dark:bg-[#4285F4]/10 px-1.5 py-px rounded">you</span>
                         )}
-
-                        <div className="flex items-center gap-2 ml-1">
-                            {entry.github && entry.github !== 'not-provided' && entry.github !== 'pending' && (
-                                <a href={entry.github} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-all hover:scale-110">
-                                    <Github className="w-4 h-4" />
-                                </a>
-                            )}
-                            {entry.linkedin && entry.linkedin !== 'not-provided' && entry.linkedin !== 'pending' && (
-                                <a href={entry.linkedin} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#0077b5] transition-all hover:scale-110">
-                                    <Linkedin className="w-4 h-4" />
-                                </a>
-                            )}
-                        </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="text-[10px] md:text-xs font-bold text-muted-foreground">@{entry.leetcodeUsername}</span>
-                    </div>
+                    <span className="text-xs text-[#9AA0A6] dark:text-muted-foreground">@{entry.leetcodeUsername}</span>
                 </div>
             </div>
 
             {/* Stats */}
-            <div className="flex gap-4 md:gap-6 items-center shrink-0">
-                <div className="hidden lg:flex flex-col items-center w-16">
+            <div className="flex gap-6 items-center shrink-0">
+                <div className="hidden lg:block w-12 text-center">
                     {entry.streak && entry.streak > 0 ? (
-                        <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-orange-500/10 border border-orange-500/20 w-full">
-                            <span className="text-lg font-black text-orange-600 dark:text-orange-400 leading-none">🔥 {entry.streak}</span>
-                        </div>
+                        <span className="text-sm font-medium text-[#E37400] dark:text-orange-400">🔥 {entry.streak}</span>
                     ) : (
-                        <div className="h-12 w-full flex items-center justify-center opacity-30">
-                            <Flame className="w-6 h-6 text-muted-foreground" />
-                        </div>
+                        <span className="text-sm text-[#9AA0A6]">—</span>
                     )}
                 </div>
 
-                <div className="flex flex-col items-end w-14 md:w-20">
-                    <span className="text-[8px] font-black text-orange-600 uppercase tracking-wider mb-1">LC</span>
-                    <span className="text-base md:text-xl font-black text-foreground leading-none tabular-nums tracking-tighter">
+                <div className="w-14 md:w-16 text-right">
+                    <span className="text-sm font-medium text-[#202124] dark:text-foreground tabular-nums">
                         {entry.totalScore.toLocaleString()}
                     </span>
                 </div>
 
-                <div className="flex flex-col items-end w-14 md:w-20">
-                    <span className="text-[8px] font-black text-green-600 uppercase tracking-wider mb-1">GFG</span>
-                    <span className="text-base md:text-xl font-black text-foreground leading-none tabular-nums tracking-tighter">
+                <div className="w-14 md:w-16 text-right">
+                    <span className="text-sm font-medium text-[#202124] dark:text-foreground tabular-nums">
                         {entry.gfgScore?.toLocaleString() || '—'}
                     </span>
                 </div>
 
-                <div className="flex flex-col items-end w-14 md:w-20">
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-wider mb-1">Today</span>
-                    <span className={`text-base md:text-xl font-black leading-none tabular-nums tracking-tighter ${entry.todayPoints > 0 ? 'text-primary' : 'text-muted-foreground'
+                <div className="w-14 md:w-16 text-right">
+                    <span className={`text-sm font-medium tabular-nums ${entry.todayPoints > 0 ? 'text-[#34A853]' : 'text-[#9AA0A6]'
                         }`}>
                         +{entry.todayPoints}
                     </span>

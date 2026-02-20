@@ -1,21 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/components/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, LogOut, Plus, Hash, Copy, Settings, Share2 } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import { getRandomRoast } from "@/config/messages";
 import ActivityFeed from "@/components/ActivityFeed";
 import { LeaderboardEntry, LeetCodeSubmission, GroupWithMembership } from "@/types";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -42,12 +40,7 @@ export default function HomePage() {
     const [newGroupDesc, setNewGroupDesc] = useState("");
     const [joinCode, setJoinCode] = useState("");
     const [modalError, setModalError] = useState("");
-    const [roast, setRoast] = useState("");
     const [groupToLeave, setGroupToLeave] = useState<GroupWithMembership | null>(null);
-
-    useEffect(() => {
-        setRoast(getRandomRoast());
-    }, []);
 
     // Fetch Groups
     const { data: groupsData } = useQuery({
@@ -83,14 +76,6 @@ export default function HomePage() {
 
     const leaderboard: LeaderboardEntry[] = leaderboardData?.leaderboard || (Array.isArray(leaderboardData) ? leaderboardData : (leaderboardData?.entries || []));
     const activities = leaderboardData?.activities || [];
-    const dailyRoastData = leaderboardData?.dailyRoast;
-
-    useEffect(() => {
-        if (dailyRoastData?.roast) {
-            const personalizedRoast = dailyRoastData.roast.replace(/\[NAME\]/g, user?.name?.split(' ')[0] || "Dhurandhar");
-            setRoast(personalizedRoast);
-        }
-    }, [dailyRoastData, user]);
 
     // Mutations
     const refreshMutation = useMutation({
@@ -310,24 +295,10 @@ export default function HomePage() {
 
             <main className="max-w-7xl mx-auto pt-24 pb-12 px-6">
                 {/* Greeting */}
-                <div className="flex items-center gap-4 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    <div className="w-11 h-11 rounded-full overflow-hidden bg-[#E8EAED] dark:bg-muted shrink-0 ring-2 ring-[#4285F4]/20">
-                        {currentUserEntry?.avatar ? (
-                            <img src={currentUserEntry.avatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[#5F6368] dark:text-muted-foreground text-base font-semibold">
-                                {user?.name?.charAt(0)}
-                            </div>
-                        )}
-                    </div>
-                    <div className="min-w-0">
-                        <h1 className="text-base font-semibold text-[#202124] dark:text-white">
-                            Hey, {user?.name?.split(' ')[0]} 👋
-                        </h1>
-                        <p className="text-sm text-[#5F6368] dark:text-muted-foreground truncate max-w-md">
-                            {roast || "Your leaderboard is waiting."}
-                        </p>
-                    </div>
+                <div className="mb-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                    <h1 className="text-lg font-medium text-[#202124] dark:text-white">
+                        Hey, {user?.name?.split(' ')[0]}
+                    </h1>
                 </div>
 
                 {/* Group Chips & Controls */}
@@ -486,32 +457,25 @@ export default function HomePage() {
                             </div>
                         ) : (
                             <>
-                                <div className="px-4 md:px-8 py-4 bg-[#F1F3F4]/50 dark:bg-muted/20 border-b border-[#E8EAED] dark:border-border flex items-center gap-4 md:gap-8">
-                                    <div className="w-8 md:w-12 flex justify-center shrink-0">
-                                        <span className="text-[10px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">Rank</span>
+                                <div className="px-4 md:px-6 py-3 border-b border-[#E8EAED] dark:border-border flex items-center gap-4 md:gap-6">
+                                    <div className="w-8 shrink-0 text-center">
+                                        <span className="text-[11px] font-medium text-[#5F6368] dark:text-muted-foreground">#</span>
                                     </div>
-                                    <div className="flex-1 flex items-center gap-4 min-w-0">
-                                        <div className="w-12 md:w-14 shrink-0 opacity-0" />
-                                        <span className="text-[10px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">User</span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-[11px] font-medium text-[#5F6368] dark:text-muted-foreground">User</span>
                                     </div>
-                                    <div className="flex gap-2 md:gap-6 items-center shrink-0">
-                                        <div className="hidden lg:flex justify-center w-16">
-                                            <span className="text-[10px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">Streak</span>
+                                    <div className="flex gap-6 items-center shrink-0">
+                                        <div className="hidden lg:block w-12 text-center">
+                                            <span className="text-[11px] font-medium text-[#5F6368] dark:text-muted-foreground">Streak</span>
                                         </div>
-                                        <div className="text-right w-16 md:w-20">
-                                            <div className="flex items-center justify-end gap-1 mb-1">
-                                                <span className="w-3 h-3 bg-orange-500 rounded text-white text-[6px] font-bold flex items-center justify-center">LC</span>
-                                                <span className="text-[8px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">Score</span>
-                                            </div>
+                                        <div className="w-14 md:w-16 text-right">
+                                            <span className="text-[11px] font-medium text-[#E37400]">LeetCode</span>
                                         </div>
-                                        <div className="text-right w-16 md:w-20">
-                                            <div className="flex items-center justify-end gap-1 mb-1">
-                                                <span className="w-3 h-3 bg-green-600 rounded text-white text-[6px] font-bold flex items-center justify-center">GFG</span>
-                                                <span className="text-[8px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">Score</span>
-                                            </div>
+                                        <div className="w-14 md:w-16 text-right">
+                                            <span className="text-[11px] font-medium text-[#34A853]">GFG</span>
                                         </div>
-                                        <div className="text-right w-16 md:w-20">
-                                            <span className="text-[8px] font-black text-[#5F6368] dark:text-muted-foreground uppercase tracking-widest">Today</span>
+                                        <div className="w-14 md:w-16 text-right">
+                                            <span className="text-[11px] font-medium text-[#5F6368] dark:text-muted-foreground">Today</span>
                                         </div>
                                     </div>
                                 </div>
