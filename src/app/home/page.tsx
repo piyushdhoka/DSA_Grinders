@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, LogOut, Plus, Hash, Copy, Settings, Share2 } from "lucide-react";
+import { Loader2, RefreshCw, LogOut, Plus, Hash, Copy, Settings, Share2, ExternalLink } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -41,6 +41,42 @@ export default function HomePage() {
     const [joinCode, setJoinCode] = useState("");
     const [modalError, setModalError] = useState("");
     const [groupToLeave, setGroupToLeave] = useState<GroupWithMembership | null>(null);
+
+    // Curated problem suggestions
+    const problemSuggestions = [
+        { title: "Two Sum", slug: "two-sum", difficulty: "Easy" },
+        { title: "Valid Parentheses", slug: "valid-parentheses", difficulty: "Easy" },
+        { title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", difficulty: "Easy" },
+        { title: "Best Time to Buy and Sell Stock", slug: "best-time-to-buy-and-sell-stock", difficulty: "Easy" },
+        { title: "Valid Palindrome", slug: "valid-palindrome", difficulty: "Easy" },
+        { title: "Reverse Linked List", slug: "reverse-linked-list", difficulty: "Easy" },
+        { title: "Maximum Subarray", slug: "maximum-subarray", difficulty: "Medium" },
+        { title: "Longest Substring Without Repeating Characters", slug: "longest-substring-without-repeating-characters", difficulty: "Medium" },
+        { title: "3Sum", slug: "3sum", difficulty: "Medium" },
+        { title: "Container With Most Water", slug: "container-with-most-water", difficulty: "Medium" },
+        { title: "Product of Array Except Self", slug: "product-of-array-except-self", difficulty: "Medium" },
+        { title: "Rotate Image", slug: "rotate-image", difficulty: "Medium" },
+        { title: "Coin Change", slug: "coin-change", difficulty: "Medium" },
+        { title: "House Robber", slug: "house-robber", difficulty: "Medium" },
+        { title: "Binary Tree Level Order Traversal", slug: "binary-tree-level-order-traversal", difficulty: "Medium" },
+        { title: "Validate Binary Search Tree", slug: "validate-binary-search-tree", difficulty: "Medium" },
+        { title: "Number of Islands", slug: "number-of-islands", difficulty: "Medium" },
+        { title: "LRU Cache", slug: "lru-cache", difficulty: "Medium" },
+        { title: "Merge Intervals", slug: "merge-intervals", difficulty: "Medium" },
+        { title: "Word Break", slug: "word-break", difficulty: "Medium" },
+        { title: "Median of Two Sorted Arrays", slug: "median-of-two-sorted-arrays", difficulty: "Hard" },
+        { title: "Trapping Rain Water", slug: "trapping-rain-water", difficulty: "Hard" },
+        { title: "Word Ladder", slug: "word-ladder", difficulty: "Hard" },
+        { title: "Serialize and Deserialize Binary Tree", slug: "serialize-and-deserialize-binary-tree", difficulty: "Hard" },
+        { title: "Regular Expression Matching", slug: "regular-expression-matching", difficulty: "Hard" }
+    ];
+
+    const [dailyProblem] = useState(() => {
+        // Pick a consistent problem for the day based on date
+        const today = new Date().toDateString();
+        const hash = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return problemSuggestions[hash % problemSuggestions.length];
+    });
 
     // Fetch Groups
     const { data: groupsData } = useQuery({
@@ -294,11 +330,46 @@ export default function HomePage() {
             </header>
 
             <main className="max-w-7xl mx-auto pt-24 pb-12 px-6">
-                {/* Greeting */}
-                <div className="mb-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    <h1 className="text-lg font-medium text-[#202124] dark:text-white">
-                        Hey, {user?.name?.split(' ')[0]}
-                    </h1>
+                {/* Greeting & Daily Challenge */}
+                <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                    <div className="flex items-start gap-4">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F1F3F4] dark:bg-muted shrink-0 ring-2 ring-[#E8EAED] dark:ring-border">
+                            {currentUserEntry?.avatar ? (
+                                <img src={currentUserEntry.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[#5F6368] dark:text-muted-foreground text-lg font-medium">
+                                    {user?.name?.charAt(0)}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Greeting & Problem */}
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-lg font-medium text-[#202124] dark:text-white leading-none">
+                                Hey, {user?.name?.split(' ')[0]}
+                            </h1>
+                            <div className="flex items-center gap-2 text-sm text-[#5F6368] dark:text-muted-foreground -mt-2">
+                                <span>Today's challenge:</span>
+                                <a 
+                                    href={`https://leetcode.com/problems/${dailyProblem.slug}/`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[#4285F4] dark:text-[#8AB4F8] hover:underline font-medium"
+                                >
+                                    {dailyProblem.title}
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                    dailyProblem.difficulty === 'Easy' ? 'bg-[#CEEAD6] text-[#0D652D]' :
+                                    dailyProblem.difficulty === 'Medium' ? 'bg-[#FEEFC3] text-[#E37400]' :
+                                    'bg-[#FAD2CF] text-[#A50E0E]'
+                                }`}>
+                                    {dailyProblem.difficulty}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Group Chips & Controls */}

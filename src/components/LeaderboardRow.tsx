@@ -53,7 +53,7 @@ export default function LeaderboardRow({ entry, rank, isCurrentUser }: Leaderboa
                     </HoverCardTrigger>
 
                     <HoverCardContent className="w-72 p-0 overflow-hidden rounded-xl border border-[#E8EAED] dark:border-border shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] z-100" align="start">
-                        <div className="p-5 bg-white dark:bg-card">
+                        <div className="px-5 pt-5 pb-4 bg-white dark:bg-card">
                             {/* Profile header */}
                             <div className="flex items-center gap-3 mb-5">
                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F1F3F4] dark:bg-muted shrink-0">
@@ -97,7 +97,7 @@ export default function LeaderboardRow({ entry, rank, isCurrentUser }: Leaderboa
                             </div>
 
                             {/* Problem breakdown — compact stacked bar */}
-                            <div className="mb-4">
+                            <div>
                                 <div className="flex h-2 rounded-full overflow-hidden bg-[#F1F3F4] dark:bg-muted">
                                     {entry.easy ? <div className="bg-[#34A853] transition-all" style={{ width: `${(entry.easy / (entry.totalProblems || 1)) * 100}%` }} /> : null}
                                     {entry.medium ? <div className="bg-[#FBBC04] transition-all" style={{ width: `${(entry.medium / (entry.totalProblems || 1)) * 100}%` }} /> : null}
