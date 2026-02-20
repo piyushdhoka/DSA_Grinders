@@ -25,117 +25,153 @@ Below are the exact values for these colors across three different color spaces.
 └────────────────┴──────────┴─────────────────┘
 
 
-Google Design Guidelines (Material Design)
-===========================================
+Modern Google Design Guidelines (Material 3 / 2024-2026)
+==========================================================
 
 TYPOGRAPHY
 ----------
-- Primary font: Google Sans (or Roboto as fallback)
-- Font weights used: 400 (Regular), 500 (Medium), 700 (Bold)
-- Body text: 14–16px, line-height ~1.5
-- Headlines: large and bold, but not decorative — always readable
-- Avoid using more than 2 font weights on a single screen
+- Primary font: Google Sans (Product Sans), Roboto as fallback
+- Font weights: 400 (Regular), 500 (Medium), 700 (Bold)
+- Body text: 14px (desktop), 16px (mobile), line-height 1.5-1.6
+- Headlines: Bold and prominent — H1 can be 32-48px, very generous sizing
+- Keep it simple: use font-weight and size for hierarchy, not decoration
+- Modern Google uses less font-weight variation than before
 
 SPACING & LAYOUT
 ----------------
-- Base spacing unit: 8px (all spacing should be multiples of 8: 8, 16, 24, 32...)
-- Content max-width: ~1200–1280px, centered on wide screens
-- Generous padding inside cards and sections
-- No clutter — Google prefers lots of white space
+- Base spacing: 8px grid (8, 16, 24, 32, 40, 48...)
+- Content max-width: ~1280px, centered on wide screens
+- Modern Google uses MORE whitespace than before — very generous padding
+- Centered layouts are common (auth flows, landing pages)
+- Don't be afraid of large gaps between sections
 
-ELEVATION & SHADOWS
---------------------
-- Surfaces use subtle box-shadows to indicate elevation, not heavy drop shadows
-- Example card shadow: box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)
-- Higher elevation = slightly more blur and spread, but always soft
+ELEVATION & SHADOWS (UPDATED 2024)
+-----------------------------------
+Modern Google uses more prominent (but still soft) shadows than Material Design 2:
 
-BUTTONS
--------
-- Primary action: filled button using Medium Blue (#4285F4), white text
-- Secondary action: outlined button with border, transparent background
-- Text buttons: no border, no fill — just colored text (used for low-emphasis actions)
-- Border radius on buttons: 4px (slightly rounded, not pill-shaped unless it's a chip)
-- No uppercase text on buttons (Google dropped ALL CAPS in newer Material 3)
+- Light elevation: 
+  box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)
 
-CARDS
------
-- Background: white (#FFFFFF) on a Light Grey (#F1F3F4) page background
-- Border: none (use shadow for separation instead)
-- Border radius: 8px on cards
-- Padding inside cards: 16–24px
+- Medium elevation:
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1)
+
+- High elevation (modals, dialogs):
+  box-shadow: 0 8px 10px 1px rgba(60,64,67,0.14), 0 3px 14px 2px rgba(60,64,67,0.12)
+
+Note: Use rgba(60,64,67,...) instead of pure black rgba(0,0,0,...) for softer shadows
+
+BUTTONS (UPDATED)
+-----------------
+- Primary CTA: Filled button, Blue (#4285F4), white text, medium shadow
+- Secondary: Outlined button OR text button (context-dependent)
+- Border radius: 4-8px (not pill-shaped for standard buttons)
+- Pills/chips: Fully rounded (border-radius: 9999px) for tags, filters
+- Button height: 40-48px (comfortable tap targets)
+- No uppercase — use sentence case
+- CTAs should have visible shadow to lift them off the page
+
+CARDS (UPDATED)
+---------------
+- Background: white (#FFFFFF) on Light Grey (#F1F3F4) page
+- Border: Modern Google DOES use subtle borders now (border: 1px solid #DADCE0 or #E8EAED)
+- Can combine border + shadow for more definition
+- Border radius: 8-12px (slightly more rounded than before)
+- Padding: 24-48px (more generous than Material Design 2)
+
+ACCENT STRIPES & COLOR BLOCKING
+--------------------------------
+Modern Google loves bold color moments:
+- Auth cards: 4px gradient stripe at top with 4-color Google palette
+  Example: linear-gradient(to right, #4285F4, #EA4335, #FBBC04, #34A853)
+- Hero sections: Can use full-width color blocks
+- Status indicators: Colored left border (4px) on notification cards
+
+GLASSMORPHISM & TRANSPARENCY
+-----------------------------
+Modern Google nav bars and overlays use:
+- backdrop-blur-lg (CSS: backdrop-filter)
+- Semi-transparent backgrounds (bg-white/95 or bg-[#202124]/95)
+- Creates depth without heavy shadows
 
 ICONS
 -----
-- Use Google's Material Symbols / Material Icons (rounded style preferred)
-- Icons should be 18px, 20px, or 24px — consistent sizing throughout
-- Icon color should match text color or use Grey (#9AA0A6) for secondary icons
+- Material Symbols or Material Icons (rounded style preferred)
+- Sizes: 18px, 20px, 24px — keep consistent
+- Color: Match text color OR use #5F6368 (grey) for secondary icons
+- Icon-only buttons: 40x40px or 48x48px (proper tap target)
 
 INTERACTIVE STATES
 ------------------
-- Hover: light grey overlay (rgba(0,0,0,0.04)) on the element
-- Focus: visible ring, usually Blue (#4285F4) at low opacity
-- Active/Pressed: slightly darker overlay
-- Disabled: reduced opacity (~38%), not hidden
+- Hover: Subtle overlay or slightly darker shade
+- Focus: Blue ring (#4285F4) with ring-offset for accessibility
+- Active/Pressed: Slightly darker + scale-[0.98] for tactile feedback
+- Disabled: 50-60% opacity (more visible than old 38%)
 
 BORDERS & DIVIDERS
 ------------------
-- Use Light Grey (#F1F3F4) or a 1px #E0E0E0 line for dividers
-- Avoid heavy borders — prefer whitespace to separate sections
-- Input fields: 1px border, grey by default, blue on focus
+- Use #DADCE0 (light mode) or #5F6368 (dark mode) for borders
+- 1px borders are acceptable now — don't avoid them
+- Dividers: 1px solid, very subtle
+- Input fields: 1px border, grey default, blue on focus
 
-DARK MODE (if applicable)
---------------------------
-- Background: #202124 (Google's dark surface)
-- Surface/card: #303134
-- Text: #E8EAED (primary), #9AA0A6 (secondary)
-- Accent colors remain the same (Medium Blue, etc.)
+DARK MODE (UPDATED 2024)
+-------------------------
+Modern Google dark mode is softer and warmer:
+
+Colors:
+- Background: #202124 (main surface)
+- Cards/elevated: #303134 (NOT #0a0a0a — too harsh)
+- Borders: #5F6368
+- Text primary: #E8EAED (not pure white)
+- Text secondary: #9AA0A6
+- Blue accent: #8AB4F8 (lighter than light mode's #4285F4)
+- Primary button in dark: #8AB4F8 background, #202124 text
+
+Shadows in dark mode:
+- Keep them but reduce opacity — surfaces are defined by subtle borders too
+
+AUTHENTICATION FLOWS
+--------------------
+Real Google OAuth pattern:
+- Centered card, max-width: 448px
+- Accent stripe (4px gradient) at top of card
+- Logo centered above content
+- Generous padding: px-10 py-12 or more
+- Subtle border + shadow combination
+- Privacy/consent text below CTA (small, 11px)
+- Footer links: Help, Privacy, Terms (11px, muted)
+
+MODERN COMPONENTS
+-----------------
+- FABs (Floating Action Buttons): Still used, usually fixed bottom-right
+- Pills/chips: Fully rounded for tags, categories
+- Snackbars: Bottom-center notifications (not top)
+- Bottom sheets: Slide-up panels on mobile
+- Badges: Small colored circles with count (notifications)
+
+LANDING PAGES
+-------------
+- Hero: Full-screen or near-full-screen centered content
+- Headline: Very large (48-64px), bold, clear value prop
+- Subheadline: Smaller, muted color
+- Single primary CTA: Prominent, filled button
+- Particle effects or subtle animations: OK but minimal
+- NO scrolling if it's a simple landing page — keep it single-screen
+- NO feature grids if you can avoid them — simple is better
+
+NAVIGATION
+----------
+- Top nav: Transparent with backdrop-blur OR solid with subtle shadow
+- Logo left, actions right
+- No heavy shadows — use subtle border-bottom instead
+- Fixed positioning common for always-visible nav
+- Mobile: Hamburger menu or bottom nav bar
 
 OVERALL PRINCIPLES
 ------------------
-- Clean and minimal — remove anything that doesn't serve a purpose
-- Color is used to draw attention, not decorate
-- Accessibility first: contrast ratio of at least 4.5:1 for body text
-- Consistent component behavior across the whole UI
-- Mobile-first responsive design
-
-
-User-Centric Design
-===================
-
-VISUAL HIERARCHY
-----------------
-- Make the most important element the biggest and boldest on the page
-- Each step down in importance = lower visual weight (smaller, lighter, less contrast)
-- Don't force reading patterns (F-pattern is outdated) — guide users naturally through hierarchy
-- CTAs/buttons must have high contrast from surrounding elements so they stand out
-
-BUTTONS & CALLS TO ACTION
---------------------------
-- Never use ghost buttons (outline-only, no fill) — users don't notice or click them
-- The primary action should always be a solid filled button
-- Use the accent color (10% rule) for CTAs so they pop against the rest of the page
-
-COLOR: 60-30-10 RULE
----------------------
-- 60% dominant/neutral colors (greys, whites, blacks)
-- 30% brand colors
-- 10% accent color — reserved for CTAs, highlights, and key interactions
-
-TYPOGRAPHY FOR READABILITY
----------------------------
-- H1: biggest, most prominent — describes what the whole page is about
-- H2: subheadings to break up content and guide scanning
-- Body/P: never use decorative fonts — prioritize readability over style
-
-CONVERSION & REDUCING FRICTION
---------------------------------
-- Design goal = make it stupid easy for users to find what they need and take action
-- Be crystal clear: who is this, what should I do, why should I care
-- People scan, they don't read — use layout and hierarchy to support scanning
-- Design must motivate the user, not just look good — speak to what drives their decision
-
-DESIGN FOR THE USER, NOT YOURSELF
------------------------------------
-- It doesn't matter if you or the client loves the design — the visitor is who matters
-- Choose fonts, colors, and layout based on the target audience's expectations
-- Do research on who is actually using the site before making design decisions
+- More whitespace than you think you need
+- Color is strategic — used to guide attention, not decorate
+- Authentic and trustworthy feel — don't over-design
+- Modern Google looks clean, spacious, confident
+- Accessibility: 4.5:1 contrast minimum, visible focus states
+- Consistent spacing and component behavior across UI
